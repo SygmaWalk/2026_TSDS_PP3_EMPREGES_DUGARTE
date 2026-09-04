@@ -6,7 +6,7 @@
 - Repositorio: `2026_TSDS_PP3_EMPREGES_DUGARTE`
 - Sprint: Sprint 1
 - Tarea de Jira: `ND2026-7 - Diseñar y crear persistencia de productos`
-- Estado: Borrador inicial
+- Estado: Implementado y verificado en Supabase local; pendiente de aplicar al remoto
 - Autor: José Dugarte
 
 ## 1. Objetivo
@@ -15,7 +15,7 @@ Definir el modelo de dominio y la estructura inicial necesaria para almacenar lo
 
 El diseño debe permitir que el MVP funcione inicialmente con un único emprendimiento, pero debe quedar preparado para incorporar múltiples emprendimientos sin modificar las entidades fundamentales.
 
-Este documento precede a la creación de las tablas y migraciones en Supabase/PostgreSQL.
+Este documento describe el modelo implementado en la migración inicial de emprendimientos y productos en Supabase/PostgreSQL.
 
 ## 2. Alcance
 
@@ -86,7 +86,7 @@ Representa un producto ofrecido por un emprendimiento dentro de su catálogo.
 | `descripcion` | `text` | No | Información adicional sobre el producto. |
 | `precio` | `numeric(12,2)` | Sí | Precio vigente del producto. |
 | `imagen_path` | `text` | No | Ruta de la imagen almacenada en Supabase Storage. |
-| `visible` | `boolean` | Sí | Indica si el producto aparece en el catálogo público. |
+| `visible` | `boolean` | Sí | Indica si el producto aparece en el catálogo público. Valor predeterminado: `false`. |
 | `fecha_creacion` | `timestamptz` | Sí | Fecha y hora de creación del registro. |
 | `fecha_modificacion` | `timestamptz` | Sí | Fecha y hora de la última modificación. |
 
@@ -99,7 +99,7 @@ nombre: 24 Minis de Queso
 descripcion: Porción de 24 tequeños pequeños rellenos de queso
 precio: 18000.00
 imagen_path: productos/24-minis-queso.webp
-visible: true
+visible: false
 ```
 
 La base de datos almacenará la ruta de la imagen y no el archivo directamente. El archivo será administrado mediante Supabase Storage.
@@ -159,12 +159,12 @@ Esto significa:
 | RN-P04 | El nombre del producto es obligatorio y no puede contener solamente espacios. |
 | RN-P05 | El precio del producto es obligatorio y debe ser mayor que cero. |
 | RN-P06 | La descripción y la imagen del producto son opcionales. |
-| RN-P07 | Todo producto nuevo comienza visible de forma predeterminada. |
+| RN-P07 | Todo producto nuevo comienza oculto de forma predeterminada (`visible = false`). El emprendedor puede publicarlo después. |
 | RN-P08 | Un producto oculto permanece almacenado, pero no aparece en el catálogo público. |
 | RN-P09 | Durante el flujo normal, los productos se ocultan en lugar de eliminarse físicamente. |
 | RN-P10 | El catálogo público muestra únicamente productos visibles pertenecientes al emprendimiento consultado. |
 | RN-P11 | Dos emprendimientos diferentes pueden registrar productos con el mismo nombre. |
-| RN-P12 | Un mismo emprendimiento no puede registrar dos productos con el mismo nombre. |
+| RN-P12 | Un mismo emprendimiento no puede registrar dos productos con el mismo nombre, ignorando mayúsculas/minúsculas y espacios al inicio y al final. La regla se aplica al crear y editar, e incluye productos visibles y ocultos. |
 | RN-P13 | Un emprendimiento no puede eliminarse mientras tenga productos asociados. |
 
 ## 7. Decisiones técnicas
@@ -207,7 +207,7 @@ fecha_creacion
 
 `productos.emprendimiento_id` será una clave foránea que referenciará a `emprendimientos.id`.
 
-La columna será indexada porque PostgreSQL no crea automáticamente índices para las claves foráneas.
+El índice único compuesto comienza por `emprendimiento_id`, por lo que también cubre las búsquedas por emprendimiento y la clave foránea. No se agrega un segundo índice redundante sobre esa columna.
 
 ### Integridad referencial
 
@@ -222,9 +222,9 @@ Las tablas se crearán en el esquema `public` de Supabase con Row Level Security
 Las reglas iniciales serán:
 
 - Los visitantes podrán consultar únicamente emprendimientos activos.
-- Los visitantes podrán consultar únicamente productos visibles.
-- No se permitirán escrituras públicas anónimas.
-- Las operaciones de creación y modificación requerirán posteriormente un usuario autenticado relacionado con el emprendimiento.
+- Los visitantes podrán consultar únicamente productos visibles de emprendimientos activos. El frontend debe filtrar además por el emprendimiento cuyo catálogo está mostrando.
+- Los roles `anon` y `authenticated` tienen únicamente lectura pública. Ninguno puede crear, editar ni eliminar registros en esta etapa.
+- Las operaciones de creación y modificación desde React requerirán posteriormente un usuario autenticado relacionado con el emprendimiento y políticas de administración específicas. Hasta entonces, la carga de datos se realiza desde un entorno administrativo de confianza.
 - La clave privilegiada de Supabase nunca será incluida en el frontend de React.
 
 Las políticas definitivas de administración se implementarán cuando se modele la relación entre usuarios y emprendimientos.
@@ -254,3 +254,42 @@ El diseño se considerará listo para implementar cuando:
 - La cardinalidad esté establecida.
 - Las decisiones técnicas puedan justificarse.
 - El modelo pueda traducirse a una migración PostgreSQL sin ambigüedades.
+
+## 11. Implementación y validación local de ND2026-7
+
+Migración: `supabase/migrations/20260904041319_crear_emprendimientos_productos.sql`.
+
+Pruebas: `supabase/tests/catalogo.test.sql`.
+
+### Restricciones implementadas
+
+- Identificadores `bigint generated always as identity` y relación obligatoria entre producto y emprendimiento.
+- Negocios activos por defecto y productos ocultos por defecto.
+- Nombres recortados en sus extremos al crear o editar; se rechazan nombres vacíos.
+- Nombres de producto únicos dentro del emprendimiento, sin distinguir mayúsculas. Los productos ocultos también reservan su nombre. Se conservan acentos y espacios interiores.
+- `slug` único compuesto por letras minúsculas sin acentos, números y guiones entre segmentos.
+- Precios positivos con almacenamiento `numeric(12,2)`; se rechaza `NaN`. PostgreSQL redondea entradas con más de dos decimales al almacenarlas; el formulario deberá validar hasta dos decimales en ND2026-8.
+- Descripción e imagen opcionales. La migración almacena la ruta; no crea un bucket de Storage.
+- Fechas generadas por el servidor; al editar se conserva la fecha de creación y se actualiza la de modificación.
+- Eliminación de emprendimientos restringida cuando tienen productos asociados.
+- RLS y permisos explícitos de lectura del catálogo público; administración desde el navegador pendiente de usuarios y membresías.
+
+### Resultado de verificación
+
+La migración se aplicó únicamente al entorno local el 4 de septiembre de 2026.
+
+- 42 comprobaciones pgTAP aprobadas, incluidas unicidad, precios, obligatoriedad, integridad referencial, fechas y permisos de lectura/escritura para `anon` y `authenticated`.
+- Asesor de seguridad local sin hallazgos.
+- Historial local de migraciones consistente con los tres archivos existentes.
+- Las pruebas terminan con `ROLLBACK`: no quedan emprendimientos ni productos de ejemplo. Las secuencias pueden avanzar durante los intentos de inserción de prueba; los identificadores no garantizan numeración consecutiva.
+
+Para repetir la validación desde la raíz del repositorio:
+
+```powershell
+npx supabase migration up --local
+npx supabase test db --local
+npx supabase db advisors --local --type security --fail-on warn
+npx supabase migration list --local
+```
+
+El despliegue remoto, el commit y el cierre de la tarea en Jira quedan pendientes. La interfaz de alta/edición y visibilidad corresponde a las subtareas ND2026-8 y ND2026-9.
