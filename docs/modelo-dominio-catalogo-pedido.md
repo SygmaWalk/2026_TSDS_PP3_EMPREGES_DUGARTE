@@ -6,7 +6,7 @@
 - Repositorio: `2026_TSDS_PP3_EMPREGES_DUGARTE`
 - Sprint: Sprint 1
 - Tarea de Jira: `ND2026-7 - Diseñar y crear persistencia de productos`
-- Estado: Implementado y verificado en Supabase local; pendiente de aplicar al remoto
+- Estado: Implementado y verificado en Supabase local y remoto; ND2026-7 en estado Listo
 - Autor: José Dugarte
 
 ## 1. Objetivo
@@ -276,7 +276,7 @@ Pruebas: `supabase/tests/catalogo.test.sql`.
 
 ### Resultado de verificación
 
-La migración se aplicó únicamente al entorno local el 4 de septiembre de 2026.
+La migración se verificó primero en el entorno local y luego se aplicó al proyecto remoto enlazado el 4 de septiembre de 2026.
 
 - 42 comprobaciones pgTAP aprobadas, incluidas unicidad, precios, obligatoriedad, integridad referencial, fechas y permisos de lectura/escritura para `anon` y `authenticated`.
 - Asesor de seguridad local sin hallazgos.
@@ -292,4 +292,4 @@ npx supabase db advisors --local --type security --fail-on warn
 npx supabase migration list --local
 ```
 
-El despliegue remoto, el commit y el cierre de la tarea en Jira quedan pendientes. La interfaz de alta/edición y visibilidad corresponde a las subtareas ND2026-8 y ND2026-9.
+La implementación quedó versionada y subida a GitHub en el commit `3c6715a`. La migración remota `20260904041319` está registrada; se verificaron tablas, columnas, restricciones, índices, triggers y permisos. El asesor de seguridad remoto no reportó hallazgos. ND2026-7 quedó en estado Listo en Jira. Las 42 pruebas pgTAP corresponden al entorno local; la verificación remota se realizó mediante consultas de estructura y seguridad. La interfaz de alta/edición y visibilidad corresponde a las subtareas ND2026-8 y ND2026-9.
