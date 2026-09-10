@@ -3,7 +3,7 @@ const formateadorPrecio = new Intl.NumberFormat('es-AR', {
   currency: 'ARS',
 })
 
-function ProductoList({ productos, onEditar }) {
+function ProductoList({ productos, onEditar, onCambiarVisibilidad }) {
   return (
     <section className="panel products-panel" aria-labelledby="list-title">
       <div className="panel-heading">
@@ -48,14 +48,25 @@ function ProductoList({ productos, onEditar }) {
                   )}
                 </dl>
               </div>
-              <button
-                className="button edit-button"
-                type="button"
-                onClick={() => onEditar(producto)}
-                aria-label={`Editar ${producto.nombre}`}
-              >
-                Editar
-              </button>
+              <div className="product-actions">
+                <button
+                  className="button visibility-button"
+                  type="button"
+                  onClick={() => onCambiarVisibilidad(producto)}
+                  aria-pressed={producto.visible}
+                  aria-label={`${producto.visible ? 'Ocultar' : 'Mostrar'} ${producto.nombre} en el catálogo público`}
+                >
+                  {producto.visible ? 'Ocultar' : 'Mostrar'}
+                </button>
+                <button
+                  className="button edit-button"
+                  type="button"
+                  onClick={() => onEditar(producto)}
+                  aria-label={`Editar ${producto.nombre}`}
+                >
+                  Editar
+                </button>
+              </div>
             </li>
           ))}
         </ul>

@@ -4,8 +4,11 @@ import ProductoForm from './features/productos/ProductoForm.jsx'
 import ProductoList from './features/productos/ProductoList.jsx'
 import {
   actualizarProducto,
+  cambiarVisibilidadProducto,
   crearProducto,
+  obtenerProductosVisibles,
 } from './features/productos/producto.js'
+import CatalogoPreview from './features/productos/CatalogoPreview.jsx'
 
 function App() {
   const [productos, setProductos] = useState([])
@@ -42,6 +45,21 @@ function App() {
     setMensaje('No se realizaron cambios.')
   }
 
+  function cambiarVisibilidad(productoSeleccionado) {
+    const productoActualizado = cambiarVisibilidadProducto(productoSeleccionado)
+
+    setProductos((productosActuales) =>
+      productosActuales.map((producto) =>
+        producto.id === productoActualizado.id ? productoActualizado : producto,
+      ),
+    )
+    setMensaje(
+      productoActualizado.visible
+        ? `“${productoActualizado.nombre}” ahora aparece en el catálogo público.`
+        : `“${productoActualizado.nombre}” quedó oculto del catálogo público.`,
+    )
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -73,7 +91,14 @@ function App() {
           onGuardar={guardarProducto}
           onCancelar={cancelarEdicion}
         />
-        <ProductoList productos={productos} onEditar={comenzarEdicion} />
+        <div className="right-column">
+          <ProductoList
+            productos={productos}
+            onEditar={comenzarEdicion}
+            onCambiarVisibilidad={cambiarVisibilidad}
+          />
+          <CatalogoPreview productos={obtenerProductosVisibles(productos)} />
+        </div>
       </div>
     </main>
   )

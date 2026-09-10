@@ -76,3 +76,15 @@ export function actualizarProducto(producto, cambios, opciones = {}) {
     fechaModificacion: opciones.ahora ?? new Date().toISOString(),
   }
 }
+
+export function cambiarVisibilidadProducto(producto, opciones = {}) {
+  return {
+    ...producto,
+    visible: !producto.visible,
+    fechaModificacion: opciones.ahora ?? new Date().toISOString(),
+  }
+}
+
+export function obtenerProductosVisibles(productos) {
+  return productos.filter((producto) => producto.visible)
+}

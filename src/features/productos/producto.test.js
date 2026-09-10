@@ -2,8 +2,10 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   actualizarProducto,
+  cambiarVisibilidadProducto,
   convertirPrecio,
   crearProducto,
+  obtenerProductosVisibles,
   validarProducto,
 } from './producto.js'
 
@@ -90,4 +92,32 @@ test('editar conserva identidad, pertenencia, visibilidad y fecha de creación',
   assert.equal(actualizado.visible, true)
   assert.equal(actualizado.fechaCreacion, original.fechaCreacion)
   assert.equal(actualizado.fechaModificacion, '2026-09-10T00:00:00.000Z')
+})
+
+test('cambiar visibilidad conserva los demás datos y actualiza la fecha', () => {
+  const original = {
+    id: 'producto-1',
+    nombre: '12 Minis',
+    precio: 6000,
+    visible: false,
+    fechaModificacion: '2026-09-09T00:00:00.000Z',
+  }
+  const visible = cambiarVisibilidadProducto(original, {
+    ahora: '2026-09-10T00:00:00.000Z',
+  })
+
+  assert.equal(visible.visible, true)
+  assert.equal(visible.nombre, original.nombre)
+  assert.equal(visible.precio, original.precio)
+  assert.equal(visible.fechaModificacion, '2026-09-10T00:00:00.000Z')
+  assert.equal(cambiarVisibilidadProducto(visible).visible, false)
+})
+
+test('el catálogo público recibe únicamente productos visibles', () => {
+  const productos = [
+    { id: 'visible', visible: true },
+    { id: 'oculto', visible: false },
+  ]
+
+  assert.deepEqual(obtenerProductosVisibles(productos), [productos[0]])
 })
