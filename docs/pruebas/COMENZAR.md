@@ -1,5 +1,9 @@
 # Cómo ver y comprender las pruebas de EmpreGest
 
+## Actualización del 22/09/2026
+
+La rama local ND2026-3-integrar-persistencia-productos incorpora acceso y guardado real en Supabase local. Seguí [la guía de persistencia](2026-09-22-persistencia-local.md) para configurar y probar esta versión. Las instrucciones de demostración de abajo describen la rama anterior de carrito.
+
 ## Abrir el trabajo desde GitHub
 
 En tu repositorio local, revisar primero `git status`. Conservar cualquier cambio
