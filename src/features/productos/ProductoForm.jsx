@@ -13,6 +13,7 @@ function ProductoForm({
   productosExistentes,
   onGuardar,
   onCancelar,
+  guardando = false,
 }) {
   const [campos, setCampos] = useState(() =>
     producto
@@ -33,8 +34,9 @@ function ProductoForm({
     setErrores((erroresActuales) => ({ ...erroresActuales, [name]: undefined }))
   }
 
-  function enviarFormulario(evento) {
+  async function enviarFormulario(evento) {
     evento.preventDefault()
+    if (guardando) return
     const resultado = validarProducto(
       campos,
       productosExistentes,
@@ -46,7 +48,7 @@ function ProductoForm({
       return
     }
 
-    if (onGuardar(resultado.datosNormalizados) === false) return
+    if (await onGuardar(resultado.datosNormalizados) === false) return
     setCampos(FORMULARIO_VACIO)
     setErrores({})
   }
@@ -61,6 +63,7 @@ function ProductoForm({
       </div>
 
       <form className="product-form" noValidate onSubmit={enviarFormulario}>
+        <fieldset className="form-fields" disabled={guardando}>
         <div className="field-group">
           <label htmlFor="nombre">
             Nombre <span className="required">*</span>
@@ -122,16 +125,18 @@ function ProductoForm({
           <input
             id="imagenPath"
             name="imagenPath"
+            aria-describedby="imagen-help"
             value={campos.imagenPath}
             onChange={actualizarCampo}
             placeholder="productos/nombre-del-archivo.webp"
             autoComplete="off"
           />
+          <p className="field-help" id="imagen-help">Opcional. Por ahora solo se guarda la ruta; la carga y la visualización de imágenes están pendientes.</p>
         </div>
 
         <div className="form-actions">
           <button className="button button-primary" type="submit">
-            {estaEditando ? 'Guardar cambios' : 'Crear producto'}
+            {guardando ? 'Guardando…' : estaEditando ? 'Guardar cambios' : 'Crear producto'}
           </button>
           {estaEditando && (
             <button
@@ -143,6 +148,7 @@ function ProductoForm({
             </button>
           )}
         </div>
+        </fieldset>
       </form>
     </section>
   )

@@ -12,7 +12,7 @@ function CatalogoPreview({ productos, onAgregar }) {
             {onAgregar ? 'Elegí tus productos' : 'Comprobación'}
           </span>
           <h2 id="preview-title">
-            {onAgregar ? 'Productos disponibles' : 'Vista pública'}
+            {onAgregar ? 'Productos disponibles' : 'Vista previa del catálogo'}
           </h2>
           <p>Solo aparecen los productos marcados como visibles.</p>
         </div>
