@@ -68,7 +68,7 @@ set local role authenticated;
 select is((select count(*) from public.emprendimientos where id in (-97001,-97002,-97003)), 2::bigint, 'Autenticarse no permite ver negocios inactivos');
 select is((select count(*) from public.productos where id between -97005 and -97001), 2::bigint, 'Autenticarse no permite ver productos ocultos');
 select throws_ok($q$insert into public.productos (emprendimiento_id,nombre,precio) values (-97001,'Intruso',100)$q$, '42501', null, 'Authenticated no crea productos sin autorizacion de negocio');
-select throws_ok($q$update public.productos set precio = 1 where id = -97002$q$, '42501', null, 'Authenticated no edita productos sin autorizacion de negocio');
+select results_eq($q$update public.productos set precio = 1 where id = -97002 returning id$q$, ARRAY[]::bigint[], 'Authenticated no edita productos sin autorizacion de negocio');
 select throws_ok($q$delete from public.productos where id = -97002$q$, '42501', null, 'Authenticated no elimina productos');
 select throws_ok($q$insert into public.emprendimientos (nombre,slug) values ('Intruso','intruso')$q$, '42501', null, 'Authenticated no crea negocios');
 select throws_ok($q$update public.emprendimientos set activo = true where id = -97003$q$, '42501', null, 'Authenticated no activa negocios');

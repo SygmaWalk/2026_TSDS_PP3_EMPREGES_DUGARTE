@@ -514,3 +514,38 @@
     flex-wrap: wrap;
   }
 }
+
+.form-fields { display: grid; gap: 18px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.access-shell { max-width: 760px; }
+.business-list { display: grid; gap: 12px; margin-bottom: 24px; }
+.button:disabled { opacity: .6; cursor: wait; }
+
+/* Jerarquía del panel y orientación durante el recorrido de compra. */
+.workspace-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 0 24px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--border);
+}
+.workspace-summary > div { padding: 18px 22px; background: var(--surface); }
+.workspace-summary dt { color: var(--text-muted); font-size: .85rem; }
+.workspace-summary dd { margin: 6px 0 0; font-size: 1.8rem; font-weight: 800; }
+.view-nav { padding: 6px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.view-nav .button { flex: 1 1 auto; background: transparent; }
+.view-introduction { margin: 0 0 24px; }
+.view-introduction p { max-width: 760px; margin: 8px 0 0; color: var(--text-muted); line-height: 1.6; }
+.status-visible { color: #155d42; background: #ddf4e8; }
+.app-header p, .panel-heading p { margin-top: 8px; line-height: 1.5; }
+.product-title-row h3, .product-meta dd, .app-header h1, .app-header p { overflow-wrap: anywhere; }
+.panel { box-shadow: 0 8px 24px rgb(42 31 23 / 4%); }
+.field-help { line-height: 1.5; }
+@media (max-width: 460px) {
+  .workspace-summary > div { padding: 14px 10px; }
+  .workspace-summary dt { font-size: .75rem; }
+  .workspace-summary dd { font-size: 1.4rem; }
+  .view-nav .button { padding: 9px 10px; font-size: .9rem; }
+}
