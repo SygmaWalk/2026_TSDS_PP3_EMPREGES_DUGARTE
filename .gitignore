@@ -28,3 +28,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# Informes de pruebas generados
+.vitest/
+coverage/
