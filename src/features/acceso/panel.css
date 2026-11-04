@@ -1,0 +1,80 @@
+@import "tailwindcss/theme.css" layer(theme) prefix(tw);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(tw);
+.business-app{min-height:100vh;background:#f7f6f3}
+.business-header{position:sticky;top:0;z-index:100;background:#fffdfa;border-bottom:1px solid #e5ddd6;min-height:76px}
+.business-sidebar{position:fixed;top:77px;bottom:0;left:0;width:240px;padding:24px 18px;background:#fffdfa;border-right:1px solid #e5ddd6;overflow:auto;display:flex;flex-direction:column;gap:24px}
+.business-sidebar label{font-size:.8rem;font-weight:600;color:#64584e}
+.business-sidebar select{width:100%;min-height:44px;padding:10px;border:1px solid #d8cbc2;border-radius:10px;background:white;font:inherit;margin-top:-16px}
+.business-sidebar nav a,.sidebar-bottom a{display:block;padding:12px 16px;border-radius:10px;color:#44362e;text-decoration:none;font-weight:600}
+.business-sidebar nav a:hover{background:#f6eee8}.business-sidebar a[aria-current=page]{background:#9f2144;color:white}
+.sidebar-bottom{margin-top:auto;border-top:1px solid #e5ddd6;padding-top:16px}
+.business-body{margin-left:240px;padding:24px 32px;min-width:0}
+.business-context{display:flex;justify-content:space-between;gap:16px;margin-bottom:16px;color:#64584e}
+.business-body>.orders-live{margin-bottom:24px}.business-body .orders-live-hint{display:none}
+.business-section .workspace-page>.dashboard-topbar{display:none}
+.business-section .app-shell{max-width:1400px;margin:0 auto;padding:0}
+.business-section .workspace-page{min-height:0;background:transparent}
+.business-section .view-nav,.business-section .public-store-link{display:none}
+.business-section .app-header{margin-top:0}
+.business-section .form-panel{max-width:850px;margin-top:20px}
+.product-search{max-width:500px;margin-bottom:24px}
+.mobile-menu{display:none}
+.business-section .orders-filters{margin:12px 0}
+.business-section details>summary{cursor:pointer;padding:12px 0;font-weight:600}
+@media(max-width:800px){.mobile-menu{display:block}.business-account{display:none}.business-header{flex-wrap:wrap;gap:8px;padding:12px}.business-sidebar{display:none;top:76px;width:min(300px,90vw);z-index:90;box-shadow:10px 0 30px #0002}.business-sidebar.is-open{display:flex}.business-body{margin-left:0;padding:20px 14px}.business-header .store-brand{font-size:1rem}.business-body .app-header{flex-wrap:wrap}}
+
+.business-section .delivery-shell>button:first-child{display:none}.business-section .product-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}.business-section .product-item{margin:0}.business-section .order-stock-history,.business-section .order-history{margin-top:20px}
+
+.business-section .workspace-page{padding:0}.business-section .orders-state-tab[aria-pressed=true]{background:#9f2144;color:white;border-color:#9f2144}.business-sidebar a:focus-visible{outline:3px solid #b68148;outline-offset:2px}
+
+/* Las tarjetas no heredan las columnas del antiguo listado horizontal. */
+.business-section .product-item{grid-template-columns:minmax(0,1fr);align-content:start;min-width:0}
+.business-section .product-main{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:start}
+.business-section .product-main>.product-image{float:none;width:64px;height:64px;margin:0}
+.business-section .product-title-row{min-width:0;display:flex;flex-direction:column;align-items:flex-start;margin:0}
+.business-section .product-title-row h3{max-width:100%;line-height:1.4;word-break:normal}
+.business-section .product-description,.business-section .product-meta{grid-column:1 / -1}
+.business-section .product-actions{align-self:end;flex-wrap:wrap;width:100%}
+.business-section .product-actions .button{flex:1;min-height:44px}
+
+/* Densidad de escritorio sin reducir las áreas de interacción. */
+@media(min-width:1100px){
+ .business-body{padding:16px 24px 80px}
+ .business-context{margin-bottom:8px}
+ .business-body>.orders-live{padding:10px 16px;margin:0 0 14px}
+ .business-section .app-header{margin-bottom:16px;gap:16px}
+ .business-section .app-header h1{font-size:1.8rem;margin:0 0 4px}
+ .business-section .app-header p{margin:0}
+ .business-section .orders-state-tabs{margin:12px 0 8px}
+ .business-section .order-card{padding:14px 18px;gap:16px;margin-bottom:8px}
+ .business-section .order-card-identity>strong{font-size:1.15rem}
+ .business-section .panel-heading{padding:16px 20px}
+ .business-section .product-search{margin-bottom:14px}
+ .business-section .product-list{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+ .business-section .product-item{padding:16px}
+ .business-section .product-main{gap:8px 12px}
+ .business-section .product-meta{margin:0}
+ .business-section .customers-list,.business-section .stock-products{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .business-section :is(.customer-card,.stock-product){padding:16px;min-width:0;flex-wrap:wrap;overflow-wrap:anywhere}
+ .business-section .form-panel{max-width:1100px;margin-top:12px}
+ .business-section .product-form>.form-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px}
+ .business-section .product-form>.form-fields>:is(.product-composition,.form-actions,.feedback,.error-feedback){grid-column:1 / -1}
+ .business-section .order-detail{max-width:1200px;padding:20px}
+ .business-section .order-detail-heading{margin:16px 0}
+ .business-section .order-progress{margin:16px 0}
+ .business-section .order-contact{padding:14px 18px;gap:16px 32px}
+ .business-section .order-next-action{padding:14px 18px}
+ .business-section .order-lines{margin:16px 0}
+ .business-section .order-payment,.business-section .order-cancellation{padding:16px;margin-top:16px}
+ .storefront-template .shop-identity-cover{height:110px}
+ .storefront-template .shop-identity-heading{padding-bottom:18px;gap:20px}
+ .storefront-template .shop-identity-title{padding-top:12px}
+ .storefront-template .shop-identity-title h1{font-size:2rem}
+ .storefront-template .shop-identity-logo{width:80px;height:80px;border-radius:18px}
+ .storefront-template .store-content{padding-top:18px}
+ .storefront-template .catalog-store .product-image{height:140px}
+ .discovery-hero{padding-top:32px;padding-bottom:32px}
+ .discovery-hero h1{font-size:3rem}
+ .discovery-hero .market-art{height:300px;transform:scale(.8);transform-origin:center}
+ .discovery-directory{padding-top:24px;padding-bottom:32px}
+}

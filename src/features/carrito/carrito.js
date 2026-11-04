@@ -51,12 +51,14 @@ export function agregarAlCarrito(items, producto) {
     )
   }
   const existente = items.find((item) => item.id === producto.id)
+  if(producto.stockDisponible!==undefined&&(existente?existente.cantidad+1:1)>producto.stockDisponible)throw Error('No hay más unidades disponibles de este producto.')
   const nuevoItem = {
     id: producto.id,
     emprendimientoId: producto.emprendimientoId,
     nombre: producto.nombre,
     precioCentavos: precioACentavos(producto.precio),
     cantidad: existente ? existente.cantidad + 1 : 1,
+    ...(producto.stockDisponible!==undefined?{stockDisponible:producto.stockDisponible}:{}),
   }
   const siguientes = existente
     ? items.map((item) => (item.id === producto.id ? nuevoItem : item))
@@ -67,6 +69,8 @@ export function agregarAlCarrito(items, producto) {
 
 export function cambiarCantidad(items, productoId, valor) {
   const cantidad = validarCantidad(valor)
+  const item=items.find(i=>i.id===productoId)
+  if(item?.stockDisponible!==undefined&&cantidad>item.stockDisponible)throw Error('La cantidad supera las unidades disponibles. Actualizá el catálogo.')
   const siguientes = items.map((item) =>
     item.id === productoId ? { ...item, cantidad } : item,
   )
@@ -91,6 +95,7 @@ export function sincronizarCarrito(items, productos) {
     return [
       {
         ...item,
+        ...(producto.stockDisponible!==undefined?{stockDisponible:producto.stockDisponible}:{}),
         nombre: producto.nombre,
         precioCentavos: precioACentavos(producto.precio),
       },

@@ -1,3 +1,4 @@
+import { Marca, InsigniaRol } from './features/acceso/InterfazAcceso.jsx'
 import { useState } from 'react'
 import { claveCarrito, recuperarCarrito, guardarCarrito } from './features/carrito/carritoStorage.js'
 import './App.css'
@@ -18,7 +19,8 @@ import {
   sincronizarCarrito,
 } from './features/carrito/carrito.js'
 
-function Workspace({ repository = null, productosIniciales = [], negocio = null, usuarioId = null, onVolver }) {
+function Workspace({ repository = null, productosIniciales = [], negocio = null, usuarioId = null, permisos = null, rol = 'emprendimiento', email = '', client, onVolver, onPedidos }) {
+  const puede = permiso => permisos ? permisos.includes(permiso) : !repository
   const [productos, setProductos] = useState(productosIniciales)
   const [guardando, setGuardando] = useState(false)
   const [productoEnEdicion, setProductoEnEdicion] = useState(null)
@@ -84,6 +86,7 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
   }
 
   async function guardarProducto(datos) {
+    if (!puede(productoEnEdicion ? 'productos.editar' : 'productos.crear')) return false
     if (guardando) return false
     setGuardando(true)
     try {
@@ -117,6 +120,7 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
   }
 
   function comenzarEdicion(producto) {
+    if (!puede('productos.editar')) return
     setProductoEnEdicion(producto)
     setMensaje('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -128,6 +132,7 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
   }
 
   async function cambiarVisibilidad(productoSeleccionado) {
+    if (!puede('productos.publicar')) return
     if (guardando) return
     setGuardando(true)
     try {
@@ -155,10 +160,10 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
   }
 
   return (
-    <main className="app-shell">
+    <main className="workspace-page"><header className="dashboard-topbar"><Marca /><div className="topbar-account">{repository && <><InsigniaRol rol={rol} /><span className="account-email">{email}</span><button className="button button-outline" disabled={guardando} onClick={onVolver}>Volver al panel</button></>}</div></header><div className="app-shell">
       <header className="app-header">
         <div>
-          <span className="eyebrow">EmpreGest · Administración</span>
+
           <h1>
             {vista === 'productos'
               ? 'Productos'
@@ -168,8 +173,10 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
           </h1>
           <p>{negocio ? negocio.nombre : 'Gestioná tu catálogo y probá el recorrido de compra.'}</p>
         </div>
-        {repository ? <button className="button" disabled={guardando} onClick={onVolver}>Mis emprendimientos</button> : <span className="demo-badge">Modo demostración</span>}
+        {!repository && <span className="demo-badge">Modo demostración</span>}
       </header>
+      {negocio?.slug && <a className="public-store-link" href={'#/tienda/' + negocio.slug} target="_blank" rel="noreferrer">Abrir tienda pública ↗</a>}
+
 
       <dl className="workspace-summary" aria-label="Resumen del emprendimiento">
         <div><dt>Productos cargados</dt><dd>{productos.length}</dd></div>
@@ -179,11 +186,12 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
 
       <div className="demo-note" role="note">
         {repository
-          ? 'Los productos se guardan en tu emprendimiento. El carrito se conserva en este navegador al recargar y al volver al mismo emprendimiento. Todavía no se pueden confirmar pedidos.'
+          ? 'Los productos se guardan en tu emprendimiento. El carrito de vista previa se conserva en este navegador. Para realizar un pedido, abrí la tienda pública.'
           : 'Demostración: productos y carrito se conservan al cambiar de pantalla, pero se pierden al recargar. Todavía no se pueden confirmar pedidos.'}
       </div>
 
       <nav className="view-nav" aria-label="Pantallas del emprendimiento">
+        {puede('pedidos.ver') && onPedidos && <button className="button" disabled={guardando} onClick={onPedidos}>Pedidos</button>}
         <button
           className="button"
           aria-current={vista === 'productos' ? 'page' : undefined}
@@ -213,10 +221,12 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
       <div className="view-introduction">
         <span className="eyebrow">{vista === 'productos' ? 'Gestión de productos' : 'Vista previa de compra'}</span>
         <p>{vista === 'productos'
-          ? 'Creá o editá productos. Pulsá Mostrar cuando quieras incluirlos en el catálogo.'
+          ? puede('productos.crear') || puede('productos.editar') || puede('productos.publicar')
+            ? 'Usá las acciones disponibles para tu cuenta. El administrador asigna los permisos.'
+            : 'Tenés acceso de solo lectura a los productos de este emprendimiento.'
           : vista === 'catalogo'
-            ? 'Probá cómo se eligen los productos. Esta vista todavía está dentro del panel; el acceso público sigue pendiente.'
-            : 'Revisá cantidades y subtotal. La confirmación del pedido estará disponible más adelante.'}</p>
+            ? 'Probá cómo se eligen los productos. Podés abrir la tienda pública con el enlace del encabezado.'
+            : 'Revisá cantidades y subtotal. Para confirmar un pedido, abrí la tienda pública.'}</p>
       </div>
 
       {avisoCarrito && <p className="error-feedback" role="alert">{avisoCarrito}</p>}
@@ -232,7 +242,7 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
       )}
 
       {vista === 'catalogo' && (
-        <CatalogoPreview
+        <CatalogoPreview client={client}
           productos={productosVisibles}
           onAgregar={agregarProducto}
         />
@@ -246,27 +256,31 @@ function Workspace({ repository = null, productosIniciales = [], negocio = null,
         />
       )}
       {vista === 'productos' && (
-        <div className="workspace-grid">
-          <ProductoForm
+        <div className={puede('productos.crear') || productoEnEdicion ? 'workspace-grid' : 'workspace-grid workspace-grid-reading'}>
+          {(puede('productos.crear') || (productoEnEdicion && puede('productos.editar'))) ? <ProductoForm
+            client={client}
             key={productoEnEdicion?.id ?? 'nuevo'}
             producto={productoEnEdicion}
             guardando={guardando}
             productosExistentes={productos}
             onGuardar={guardarProducto}
             onCancelar={cancelarEdicion}
-          />
+          /> : <p className="access-readonly">{puede('productos.editar') ? 'Seleccioná un producto del listado para editarlo.' : 'Tu cuenta no tiene permiso para crear o editar productos. Contactá al administrador si necesitás otro acceso.'}</p>}
           <div className="right-column">
             <ProductoList
+              client={client}
+              puedeEditar={puede('productos.editar')}
+              puedePublicar={puede('productos.publicar')}
               productos={productos}
               guardando={guardando}
               onEditar={comenzarEdicion}
               onCambiarVisibilidad={cambiarVisibilidad}
             />
-            <CatalogoPreview productos={productosVisibles} />
+            <CatalogoPreview client={client} productos={productosVisibles} />
           </div>
         </div>
       )}
-    </main>
+    </div></main>
   )
 }
 

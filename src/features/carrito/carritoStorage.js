@@ -13,18 +13,22 @@ export function recuperarCarrito(clave, productos) {
     const guardado = JSON.parse(texto)
     if (guardado.version !== 1 || !Array.isArray(guardado.items)) throw new Error('Formato inválido')
     let items = []
+    let stockAjustado=false
     for (const seleccion of guardado.items) {
       if (!seleccion || !Number.isSafeInteger(seleccion.cantidad) || seleccion.cantidad < 1) continue
       const producto = productos.find(actual => String(actual.id) === String(seleccion.id))
       if (!producto?.visible || items.some(item => item.id === producto.id)) continue
       try {
         // Nombres, precios y pertenencia siempre proceden del catálogo recién consultado.
-        items = cambiarCantidad(agregarAlCarrito(items, producto), producto.id, seleccion.cantidad)
+        let cantidad=seleccion.cantidad
+        if(producto.stockDisponible!==undefined&&cantidad>producto.stockDisponible){stockAjustado=true;cantidad=producto.stockDisponible}
+        if(cantidad<1)continue
+        items = cambiarCantidad(agregarAlCarrito(items, producto), producto.id, cantidad)
       } catch {
         // Se descarta solo la selección incompatible o fuera del rango de cálculo seguro.
       }
     }
-    return { items, aviso: '' }
+    return { items, aviso: stockAjustado?'El carrito se ajustó a las existencias actuales. Revisá las cantidades.':'' }
   } catch {
     return { items: [], aviso: 'No se pudo recuperar el carrito guardado en este navegador.' }
   }
@@ -42,4 +46,8 @@ export function guardarCarrito(clave, items) {
   } catch {
     return 'El navegador no pudo guardar el carrito. Los últimos cambios podrían perderse al recargar.'
   }
+}
+
+export function claveCarritoInvitado(emprendimientoId) {
+  return 'empregest:carrito:invitado:v1:' + encodeURIComponent(emprendimientoId)
 }

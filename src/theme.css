@@ -1,0 +1,55 @@
+
+.theme-toggle{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:500;display:flex;align-items:center;gap:8px;min-height:44px;padding:10px 16px;border:1px solid var(--border-strong);border-radius:24px;background:var(--surface);color:var(--text);box-shadow:0 4px 20px #0002;font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+.theme-toggle:focus-visible{outline:3px solid var(--link);outline-offset:4px}
+body{padding-bottom:76px}
+:root[data-theme=dark]{color-scheme:dark;--brand:#ff94af;--link:#91c7ff;--danger:#ff9baa;--text:#f1ede9;--text-muted:#bdb5af;--surface:#22262d;--border:#40464f;--border-strong:#626b77;background:#16191f;color:var(--text)}
+html[data-theme=dark] :is(.business-app,.workspace-page,.dashboard-page,.store-page,.discovery-page,.login-page,.login-form-side){background:#16191f;color:var(--text)}
+html[data-theme=dark] :is(.business-header,.business-sidebar,.dashboard-topbar,.dashboard-sidebar,.panel,.business-card,.shop-card,.access-state,.dashboard-stats,.client-welcome,.directory-state,.discovery-steps,.store-cart-summary,.shop-identity,.cart-summary,.cart-item,.order-card,.preview-grid>li,.overview-metrics>div,.overview-actions>article,.delivery-settings,.order-next-action){background:var(--surface);border-color:var(--border);color:var(--text)}
+html[data-theme=dark] :is(p,small,time,dt,.field-help,.business-context,.business-sidebar label,.account-email,.hero-note,.directory-count,.shop-identity-label,.shop-identity-title p,.store-footer,.discovery-footer,.art-label,.profile-privacy,.overview-breadcrumb,.catalog-order small){color:var(--text-muted)}
+html[data-theme=dark] :is(h1,h2,h3,h4,label,dd,.brand-lockup,.product-title-row h3){color:var(--text)}
+html[data-theme=dark] :is(input,textarea,select){background:#191d24;color:var(--text);border-color:var(--border-strong)}
+html[data-theme=dark] :is(input,textarea)::placeholder{color:#a49e99}
+html[data-theme=dark] :is(input,textarea,select):focus-visible{outline:2px solid var(--link);outline-offset:2px}
+html[data-theme=dark] :is(a,.public-links>a:not(.button),.business-sidebar nav a,.sidebar-bottom a,.shop-card-cta){color:var(--link)}
+html[data-theme=dark] :is(.button-secondary,.button-outline,.button:not(.button-primary),.orders-state-tab){background:#303640;color:var(--text);border-color:var(--border-strong)}
+html[data-theme=dark] :is(.button-primary,.business-sidebar a[aria-current=page],.orders-state-tab[aria-pressed=true]){background:#a51d47;color:white;border-color:#c54c70}
+html[data-theme=dark] .storefront-template .button-primary{background:var(--store-accent);border-color:var(--store-accent);color:white}
+html[data-theme=dark] :is(button:disabled,.button:disabled){background:#30333a;color:#a4a8b0;border-color:#434851;opacity:.7}
+html[data-theme=dark] .business-sidebar nav a:hover{background:#3b3340;color:white}
+html[data-theme=dark] :is(.eyebrow,.discovery-hero h1 em){color:#ffabc1}
+html[data-theme=dark] :is(.product-image-placeholder,.shop-identity-logo,.appearance-frame-scroll,.profile-monogram,.business-avatar,.account-avatar){background:#303640;color:#d5c8ba;border-color:var(--border)}
+html[data-theme=dark] .product-image-placeholder span{color:#c7b8aa}
+html[data-theme=dark] :is(.shop-cover){background:linear-gradient(110deg,#373036,#273b36)}
+html[data-theme=dark] :is(.shop-cover-initial){color:#eed2bd}
+html[data-theme=dark] :is(.orders-live,.feedback,.success-feedback,.new-orders-notice){background:#193c33;border-color:#3e7c68;color:#b3f1d5}
+html[data-theme=dark] :is(.orders-live,.feedback,.success-feedback,.new-orders-notice) :is(p,small,span,strong){color:#b3f1d5}
+html[data-theme=dark] :is(.error-feedback,.field-error){background:#482832;color:#ffc1cd;border-color:#986070}
+html[data-theme=dark] :is(.status-badge,.order-status,.business-status,.shop-guest-label,.role-badge,.payment-badge){background:#383e48;color:#e6e8ec;border-color:#626b77}
+html[data-theme=dark] :is(.status-visible,.status-entregado,.payment-paid,.business-status:not(.business-inactive)){background:#214739;color:#b4f0d0}
+html[data-theme=dark] :is(.status-pendiente,.payment-pending){background:#514029;color:#ffe0a5}
+html[data-theme=dark] .status-cancelado{background:#512c38;color:#ffc1d2}
+html[data-theme=dark] :is(.stock-negative,.field-error){color:#ffadb9}
+html[data-theme=dark] :is(.product-item,.panel-heading,.store-navigation,.shop-identity,.catalog-settings,.catalog-order li,.sidebar-bottom,.discovery-directory,.discovery-footer,.store-footer,.order-contact,.order-history,.order-stock-history){border-color:var(--border)}
+html[data-theme=dark] .storefront-template :focus-visible{outline-color:#91c7ff}
+/* Logos, fotografías y mapas conservan sus colores originales. */
+
+/* Superficies secundarias: fondo y texto deben cambiar juntos. */
+html[data-theme=dark] :is(.order-contact,.delivery-summary,.order-payment,.payment-confirmation,.split-payment,.order-cancellation,.stock-threshold,.workspace-access,.access-readonly,.store-state,.overview-note,.welcome-panel,.dashboard-stats>div,.order-row){background:var(--surface);color:var(--text);border-color:var(--border)}
+html[data-theme=dark] :is(.order-payment,.payment-confirmation,.split-payment,.order-cancellation,.stock-threshold,.delivery-summary,.order-contact,.overview-note,.welcome-panel) :is(p,small,dt,span){color:var(--text-muted)}
+html[data-theme=dark] :is(.order-payment,.payment-confirmation,.split-payment,.order-cancellation,.stock-threshold,.delivery-summary,.order-contact) :is(strong,dd,label){color:var(--text)}
+html[data-theme=dark] :is(.order-progress li,.order-card-customer>span,.order-row-total,.customer-stats,.stock-detail,.stock-product,.required){color:var(--text)}
+html[data-theme=dark] .order-progress .step-reached{color:#a9e5c8;border-color:#67b18e}
+html[data-theme=dark] :is(.stock-status-bajo,.stock-status-sin_stock){background:#514029;color:#ffe0a5}
+html[data-theme=dark] .stock-status-sin_stock{background:#512c38;color:#ffc1d2}
+html[data-theme=dark] .order-status.status-confirmado{background:#243e59;color:#bedfff}
+html[data-theme=dark] .order-status.status-preparacion{background:#493555;color:#e9c9fa}
+html[data-theme=dark] .order-status.status-listo{background:#214739;color:#b4f0d0}
+html[data-theme=dark] .order-status.status-entregado{background:#334238;color:#d0e5d5}
+html[data-theme=dark] .order-status.status-pendiente{background:#514029;color:#ffe0a5}
+html[data-theme=dark] .order-status.status-cancelado{background:#512c38;color:#ffc1d2}
+html[data-theme=dark] .profile-form input[readonly]{background:#303640;color:var(--text-muted)}
+html[data-theme=dark] .product-image-placeholder :is(span,small){color:#d5c8ba}
+html[data-theme=dark] .discovery-steps>div>span{color:#e7bd8f}
+/* Los controles de Leaflet están sobre un mapa que conserva su paleta clara. */
+html[data-theme=dark] .leaflet-container :is(a,p,span){color:#24527a}
+html[data-theme=dark] .leaflet-popup-content{color:#241c18}

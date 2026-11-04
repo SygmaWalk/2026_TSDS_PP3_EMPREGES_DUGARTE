@@ -1,3 +1,4 @@
+import { obtenerAcceso } from '../src/features/acceso/accesoRepository.js'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
@@ -39,8 +40,13 @@ try {
   assert.ifError(user2.error); fixture.usuarios.push(user2.data.user.id)
   const client = conectar()
   assert.ifError((await client.auth.signInWithPassword({ email, password })).error)
-  const inicio = await client.rpc('crear_emprendimiento_inicial', { p_nombre: 'Prueba de persistencia', p_slug: `qa-${sufijo}` })
-  assert.ifError(inicio.error); fixture.negocios.push(inicio.data)
+  const negocio = await admin.from('emprendimientos').insert({ nombre: 'Prueba de persistencia', slug: `qa-${sufijo}` }).select('id').single()
+  assert.ifError(negocio.error)
+  const inicio = { data: negocio.data.id }
+  fixture.negocios.push(inicio.data)
+  assert.ifError((await admin.from('cuentas_acceso').update({ rol: 'emprendimiento', habilitada: true }).eq('usuario_id', user1.data.user.id)).error)
+  assert.ifError((await admin.from('miembros_emprendimiento').insert({ emprendimiento_id: inicio.data, usuario_id: user1.data.user.id })).error)
+  assert.ifError((await admin.from('permisos_miembro').insert(['productos.ver','productos.crear','productos.editar','productos.publicar'].map(permiso => ({ emprendimiento_id: inicio.data, usuario_id: user1.data.user.id, permiso })))).error)
   const repo = crearProductosRepository(client, inicio.data)
   const datos = { nombre: 'Tequeños QA', precio: 1000, descripcion: null, imagenPath: null }
   const creado = await repo.crear(datos)
@@ -66,9 +72,40 @@ try {
   assert.deepEqual(await repoAjeno.listar(), [])
   assert.deepEqual(await crearProductosRepository(anon, inicio.data).listar(), [])
   assert.equal((await crearProductosRepository(nuevaSesion, inicio.data).listar())[0].visible, false)
-  console.log('PASS: alta, edición, duplicados, recarga con nueva sesión, visibilidad pública y aislamiento entre cuentas.')
+  const acceso = await obtenerAcceso(client, user1.data.user.id)
+  assert.equal(acceso.rol, 'emprendimiento')
+  assert.equal(acceso.negocios[0].permisos.length, 4)
+  const accesoCliente = await obtenerAcceso(ajeno, user2.data.user.id)
+  assert.equal(accesoCliente.rol, 'cliente')
+  assert.equal(accesoCliente.negocios.length, 0)
+  assert.ifError((await admin.from('permisos_miembro').delete().eq('usuario_id', user1.data.user.id).eq('permiso', 'productos.editar')).error)
+  await assert.rejects(() => repo.editar(creado.id, { ...datos, precio: 2 }), /permiso/)
+  assert.ifError((await admin.from('permisos_miembro').insert({ emprendimiento_id: inicio.data, usuario_id: user1.data.user.id, permiso: 'productos.editar' })).error)
+  assert.ifError((await admin.from('cuentas_acceso').update({ habilitada: false }).eq('usuario_id', user1.data.user.id)).error)
+  await assert.rejects(() => repo.crear({ ...datos, nombre: 'No autorizado' }), /permiso/)
+  assert.deepEqual(await repo.listar(), [])
+  assert.equal((await obtenerAcceso(client, user1.data.user.id)).habilitada, false)
+  assert.ifError((await admin.from('cuentas_acceso').update({ habilitada: true }).eq('usuario_id', user1.data.user.id)).error)
+  console.log('PASS: persistencia, catálogo público, aislamiento, roles y revocación efectiva con la misma sesión.')
   if (process.argv.includes('--preparar-ui')) {
-    writeFileSync(fixturePath, JSON.stringify({ ...fixture, email, password }), { flag: 'wx' })
+    const cuentas = [
+      { perfil: 'Emprendimiento: gestión completa de productos', email, password },
+      { perfil: 'Cliente', email: user2.data.user.email, password },
+    ]
+    for (const perfil of ['lector', 'administrador', 'deshabilitada']) {
+      const correo = `qa-${perfil}-${sufijo}@example.test`
+      const cuenta = await admin.auth.admin.createUser({ email: correo, password, email_confirm: true })
+      assert.ifError(cuenta.error); fixture.usuarios.push(cuenta.data.user.id)
+      assert.ifError((await admin.from('cuentas_acceso').update({
+        rol: perfil === 'administrador' ? 'administrador' : 'emprendimiento', habilitada: perfil !== 'deshabilitada',
+      }).eq('usuario_id', cuenta.data.user.id)).error)
+      if (perfil === 'lector') {
+        assert.ifError((await admin.from('miembros_emprendimiento').insert({ emprendimiento_id: inicio.data, usuario_id: cuenta.data.user.id })).error)
+        assert.ifError((await admin.from('permisos_miembro').insert({ emprendimiento_id: inicio.data, usuario_id: cuenta.data.user.id, permiso: 'productos.ver' })).error)
+      }
+      cuentas.push({ perfil, email: correo, password })
+    }
+    writeFileSync(fixturePath, JSON.stringify({ ...fixture, email, password, cuentas }, null, 2), { flag: 'wx' })
     conservar = true
     console.log('Cuenta temporal lista para revisión visual. Ejecutar --limpiar-ui al terminar.')
   }

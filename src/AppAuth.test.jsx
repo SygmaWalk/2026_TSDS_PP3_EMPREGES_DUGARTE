@@ -1,13 +1,15 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { expect, test, vi } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
 import App from './App.jsx'
+
+beforeEach(() => { window.history.replaceState(null, '', '#/ingresar') })
 
 function clientePrueba(session = null) {
   let notificar
   const unsubscribe = vi.fn()
   const resultado = Promise.resolve({ data: [], error: null })
-  const query = { select: () => query, eq: () => query, order: () => resultado }
+  const query = { select: () => query, eq: () => query, order: () => resultado, maybeSingle: async () => ({ data: { rol: 'emprendimiento', habilitada: true }, error: null }) }
   const client = {
     from: () => query,
     auth: {
@@ -61,4 +63,21 @@ test('CP-AUTH-04: un evento de cierre más reciente prevalece sobre la lectura i
   await act(async () => evento('SIGNED_OUT', null))
   await act(async () => resolver({ data: { session: { user: { id: 'anterior' } } }, error: null }))
   expect(screen.getByRole('heading', { name: 'Ingresar' })).toBeVisible()
+})
+
+test('un retorno OAuth cancelado informa el error y limpia los parámetros',async()=>{
+ const {client}=clientePrueba()
+ window.history.replaceState(null,'','/?error=access_denied&error_description=mensaje-externo#/ingresar')
+ render(<App client={client}/>)
+ expect(await screen.findByRole('alert')).toHaveTextContent('Cancelaste el acceso con Google')
+ expect(window.location.search).toBe('')
+ expect(screen.queryByText('mensaje-externo')).not.toBeInTheDocument()
+})
+test('una sesión recuperada al volver de Google consume el destino de compra seguro',async()=>{
+ const {client}=clientePrueba({user:{id:'cliente-oauth',email:'oauth@example.test'}})
+ sessionStorage.setItem('empreges:retorno-compra','#/tienda/tienda-a')
+ render(<App client={client} publicClient={client}/>)
+ await act(async()=>{await Promise.resolve()})
+ expect(window.location.hash).toBe('#/tienda/tienda-a')
+ expect(sessionStorage.getItem('empreges:retorno-compra')).toBeNull()
 })

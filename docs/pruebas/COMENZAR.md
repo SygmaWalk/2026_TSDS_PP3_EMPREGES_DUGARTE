@@ -1,5 +1,17 @@
 # Cómo ver y comprender las pruebas de EmpreGest
 
+> Estado actual (03/11/2026): para instalar o continuar desde otra PC, usar el README de la raíz. Las instrucciones de ramas de demostración que siguen son históricas.
+
+> Actualización posterior del 01/10/2026: ya están implementados localmente [dirección, mapa, cobertura y tarifas de entrega](2026-10-01-entregas-y-cobertura.md). Las limitaciones de entrega descritas en el informe anterior son históricas. Aceptación manual pendiente.
+
+> Actualización 01/10/2026: la base de roles y permisos ya está implementada localmente. Consultar [estado y guía actual de acceso](2026-10-01-acceso-y-permisos.md). Las referencias anteriores a autorregistro interno o autoalta de emprendimiento son históricas.
+
+> También están disponibles [imágenes, tienda pública y carrito invitado](2026-10-01-catalogo-publico-e-imagenes.md), con guía manual y resultados automatizados locales.
+
+> Continuación del 01/10/2026: [confirmación de pedidos implementada localmente](2026-10-01-confirmacion-pedidos.md), con comprobante y pruebas automatizadas. Aceptación manual pendiente.
+
+> También está disponible el [panel de pedidos por emprendimiento](2026-10-01-panel-pedidos.md), con filtros y acceso independiente.
+
 ## Actualización del 22/09/2026
 
 La rama local ND2026-3-integrar-persistencia-productos incorpora acceso y guardado real en Supabase local. Seguí [la guía de persistencia](2026-09-22-persistencia-local.md) para configurar y probar esta versión. Las instrucciones de demostración de abajo describen la rama anterior de carrito.

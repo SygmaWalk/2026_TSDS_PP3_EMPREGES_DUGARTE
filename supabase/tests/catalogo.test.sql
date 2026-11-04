@@ -29,7 +29,7 @@ select is((select count(*) from public.productos where nombre = 'Tarta de verdur
 
 select throws_ok($q$insert into public.productos (emprendimiento_id,nombre,precio) values (-97001,' TARTA DE VERDURA ',100)$q$, '23505', null, 'No duplica un nombre oculto por mayusculas o espacios');
 select throws_ok($q$update public.productos set nombre = ' tArTa de verdura ' where id = -97002$q$, '23505', null, 'La unicidad tambien se exige al editar');
-select throws_ok($q$update public.productos set emprendimiento_id = -97001 where id = -97003$q$, '23505', null, 'Mover de negocio no permite duplicados');
+select throws_ok($q$update public.productos set emprendimiento_id = -97001 where id = -97003$q$, '42501', null, 'No se permite trasladar productos entre negocios');
 select throws_ok($q$insert into public.productos (emprendimiento_id,nombre,precio) values (-97001,E' \t\n ',100)$q$, '23514', null, 'Rechaza nombres compuestos solo por espacios');
 select throws_ok($q$insert into public.productos (emprendimiento_id,precio) values (-97001,100)$q$, '23502', null, 'Nombre obligatorio');
 select throws_ok($q$insert into public.productos (emprendimiento_id,nombre) values (-97001,'Sin precio')$q$, '23502', null, 'Precio obligatorio');
@@ -71,7 +71,7 @@ select throws_ok($q$insert into public.productos (emprendimiento_id,nombre,preci
 select results_eq($q$update public.productos set precio = 1 where id = -97002 returning id$q$, ARRAY[]::bigint[], 'Authenticated no edita productos sin autorizacion de negocio');
 select throws_ok($q$delete from public.productos where id = -97002$q$, '42501', null, 'Authenticated no elimina productos');
 select throws_ok($q$insert into public.emprendimientos (nombre,slug) values ('Intruso','intruso')$q$, '42501', null, 'Authenticated no crea negocios');
-select throws_ok($q$update public.emprendimientos set activo = true where id = -97003$q$, '42501', null, 'Authenticated no activa negocios');
+select results_eq($q$update public.emprendimientos set activo = true where id = -97003 returning id$q$, ARRAY[]::bigint[], 'Authenticated sin rol no activa negocios');
 select throws_ok($q$delete from public.emprendimientos where id = -97003$q$, '42501', null, 'Authenticated no elimina negocios');
 reset role;
 

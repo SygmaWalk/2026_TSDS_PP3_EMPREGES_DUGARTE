@@ -1,0 +1,73 @@
+import assert from 'node:assert/strict'
+import { readFileSync, mkdirSync } from 'node:fs'
+import { chromium } from '@playwright/test'
+const fixture = JSON.parse(readFileSync('.qa-tienda.local','utf8'))
+const editor = fixture.cuentas.find(c => c.perfil === 'editor')
+const browser = await chromium.launch({headless:true})
+mkdirSync('test-results',{recursive:true})
+const errores = []
+async function capturar(page,nombre) {
+  for (const [width,height,formato] of [[1280,900,'escritorio'],[390,844,'movil']]) {
+    await page.setViewportSize({width,height})
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),'Sin desborde: '+nombre)
+    await page.screenshot({path:'test-results/'+nombre+'-'+formato+'.png',fullPage:true})
+  }
+  await page.setViewportSize({width:1280,height:900})
+}
+try {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+  page.on('pageerror',e => errores.push(e.message))
+  await page.goto('http://127.0.0.1:5173/#/ingresar')
+  await page.getByLabel('Correo electrónico').fill(editor.email)
+  await page.getByLabel('Contraseña').fill(editor.password)
+  await page.getByRole('button',{name:'Ingresar',exact:true}).click()
+  await page.getByRole('button',{name:'Abrir productos de Tienda de prueba',exact:true}).click()
+  await page.getByRole('button',{name:'Editar Producto con imagen',exact:true}).click()
+  await page.getByLabel('Imagen del producto').setInputFiles({name:'no-es-imagen.txt',mimeType:'text/plain',buffer:Buffer.from('prueba')})
+  await page.getByRole('alert').filter({hasText:'JPG, PNG o WebP'}).waitFor()
+  await page.getByRole('button',{name:'Quitar imagen',exact:true}).click()
+  await page.getByRole('button',{name:'Guardar cambios',exact:true}).click()
+  await page.getByRole('status').filter({hasText:'Se actualizó'}).waitFor()
+  await page.getByRole('button',{name:'Editar Producto con imagen',exact:true}).click()
+  await page.getByLabel('Imagen del producto').setInputFiles('src/assets/hero.png')
+  await page.getByRole('button',{name:'Guardar cambios',exact:true}).click()
+  await page.getByRole('status').filter({hasText:'Se actualizó'}).waitFor()
+  await page.locator('.products-panel').getByRole('img',{name:'Producto con imagen',exact:true}).waitFor()
+  await capturar(page,'gestion-imagenes')
+  const publicLink = await page.getByRole('link',{name:'Abrir tienda pública ↗'}).getAttribute('href')
+  assert.equal(publicLink, '#/tienda/'+fixture.slug)
+
+  const guest = await browser.newContext()
+  const tienda = await guest.newPage()
+  tienda.on('pageerror',e=>errores.push(e.message))
+  await tienda.goto(fixture.url)
+  await tienda.getByRole('heading',{name:'Tienda de prueba',exact:true}).waitFor()
+  const imagen = tienda.getByRole('img',{name:'Producto con imagen',exact:true})
+  await imagen.waitFor()
+  await imagen.evaluate(img => img.decode())
+  assert.equal(await tienda.getByText('Producto oculto de prueba',{exact:true}).count(),0)
+  assert.equal(await tienda.getByRole('button',{name:'Crear producto',exact:true}).count(),0)
+  await capturar(tienda,'tienda-publica')
+  await tienda.getByRole('button',{name:'Agregar Producto con imagen al carrito',exact:true}).click()
+  await tienda.getByRole('button',{name:'Carrito (1)',exact:true}).click()
+  await tienda.getByLabel('Cantidad de Producto con imagen',{exact:true}).fill('3')
+  await tienda.getByRole('button',{name:'Actualizar cantidad de Producto con imagen',exact:true}).click()
+  await tienda.reload()
+  await tienda.getByRole('button',{name:'Carrito (3)',exact:true}).click()
+  assert.match(await tienda.getByTestId('subtotal').innerText(),/4.501,50/)
+  await capturar(tienda,'carrito-invitado')
+  await tienda.getByRole('button',{name:'Quitar Producto con imagen',exact:true}).click()
+  await tienda.reload()
+  await tienda.getByRole('button',{name:'Carrito (0)',exact:true}).waitFor()
+  await tienda.goto('http://127.0.0.1:5173/#/tienda/no-existe-qa')
+  await tienda.getByRole('heading',{name:'No encontramos esta tienda'}).waitFor()
+
+  // Una sesión administrativa también usa la lectura pública al visitar la tienda.
+  await page.goto(fixture.url)
+  await page.getByRole('heading',{name:'Tienda de prueba',exact:true}).waitFor()
+  assert.equal(await page.getByText('Producto oculto de prueba',{exact:true}).count(),0)
+  assert.deepEqual(errores,[])
+  await context.close(); await guest.close()
+  console.log('PASS navegador: formulario de imágenes, tienda sin sesión, imagen descargada, carrito tras recarga, tienda inexistente y aislamiento del panel.')
+} finally { await browser.close() }

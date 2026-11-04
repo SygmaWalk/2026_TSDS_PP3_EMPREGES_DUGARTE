@@ -1,11 +1,21 @@
+import AdministracionCuentas from './AdministracionCuentas.jsx'
+import PanelNegocio from './PanelNegocio.jsx'
+import {useRuta,leerRuta,navegar,rutaNegocio,inicioNegocio,SECCIONES,confirmarSalida} from '../../navigation.js'
+import EditorApariencia from '../apariencia/EditorApariencia.jsx'
+import PanelStock from '../stock/PanelStock.jsx'
+import PanelClientes from '../clientes/PanelClientes.jsx'
+import PerfilCliente from '../cliente/PerfilCliente.jsx'
+import ConfigEntregas from '../entregas/ConfigEntregas.jsx'
+import PanelPedidos from '../pedidos/PanelPedidos.jsx'
 import { useEffect, useMemo, useState } from 'react'
-import Workspace from '../../Workspace.jsx'
+import ProductosPanel from '../productos/ProductosPanel.jsx'
 import { crearProductosRepository } from '../productos/productosRepository.js'
+import { obtenerAcceso } from './accesoRepository.js'
+import { Marca, InsigniaRol } from './InterfazAcceso.jsx'
 
-function CatalogoAdministrable({ client, negocio, usuarioId, onVolver }) {
+function CatalogoAdministrable({ client, negocio, onVolver }) {
   const repository = useMemo(() => crearProductosRepository(client, negocio.id), [client, negocio.id])
   const [carga, setCarga] = useState({ productos: null, error: '' })
-  const [intento, setIntento] = useState(0)
   useEffect(() => {
     let vigente = true
     repository.listar().then(productos => {
@@ -14,53 +24,41 @@ function CatalogoAdministrable({ client, negocio, usuarioId, onVolver }) {
       if (vigente) setCarga({ productos: null, error: error.message })
     })
     return () => { vigente = false }
-  }, [repository, intento])
+  }, [repository])
   if (!carga.productos) return <main className="app-shell">
-    {carga.error ? <><p role="alert" className="error-feedback">{carga.error}</p><button className="button" onClick={() => setIntento(intento + 1)}>Reintentar</button></> : <p role="status">Cargando productos…</p>}
+    {carga.error ? <p role="alert">{carga.error}</p> : <p role="status">Cargando productos…</p>}
     <button className="button" onClick={onVolver}>Volver a emprendimientos</button>
   </main>
-  return <Workspace usuarioId={usuarioId} repository={repository} productosIniciales={carga.productos} negocio={negocio} onVolver={onVolver} />
+  return <ProductosPanel client={client} repository={repository} productosIniciales={carga.productos} negocio={negocio}/>
 }
 
 export default function Emprendimientos({ client, usuario }) {
-  const [negocios, setNegocios] = useState(null)
-  const [seleccionado, setSeleccionado] = useState(null)
+  const [acceso, setAcceso] = useState(null)
+  const ruta=useRuta(),destino=leerRuta(ruta)
   const [error, setError] = useState('')
   const [ocupado, setOcupado] = useState(false)
-  const [nombre, setNombre] = useState('')
-  const [slug, setSlug] = useState('')
   const [intento, setIntento] = useState(0)
   useEffect(() => {
     let vigente = true
-    // Filtrar por membresía evita confundir negocios públicos con administrables.
-    client.from('miembros_emprendimiento')
-      .select('emprendimiento_id,emprendimientos(id,nombre,slug,activo)')
-      .eq('usuario_id', usuario.id).order('emprendimiento_id')
-      .then(({ data, error: fallo }) => {
-        if (!vigente) return
-        if (fallo) { setError('No se pudieron cargar tus emprendimientos.'); return }
-        setNegocios(data.map(fila => fila.emprendimientos).filter(Boolean)); setError('')
-      }).catch(() => { if (vigente) setError('No se pudieron cargar tus emprendimientos.') })
-    return () => { vigente = false }
+    let solicitud = 0
+    async function cargar() {
+      const actual = ++solicitud
+      try {
+        const resultado = await obtenerAcceso(client, usuario.id)
+        if (vigente && actual === solicitud) { setAcceso(resultado); setError('') }
+      } catch (fallo) {
+        if (vigente && actual === solicitud) { setAcceso(null); setError(fallo.message) }
+      }
+    }
+    cargar()
+    // El servidor protege cada operación; esta actualización retira controles obsoletos.
+    const intervalo = window.setInterval(cargar, 30000)
+    window.addEventListener('focus', cargar)
+    return () => { vigente = false; window.clearInterval(intervalo); window.removeEventListener('focus', cargar) }
   }, [client, usuario.id, intento])
 
-  async function crear(event) {
-    event.preventDefault()
-    if (ocupado) return
-    if (!nombre.trim() || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug.trim())) {
-      setError('Ingresá un nombre y un identificador con minúsculas, números y guiones.'); return
-    }
-    setOcupado(true); setError('')
-    try {
-      const { data, error: fallo } = await client.rpc('crear_emprendimiento_inicial', { p_nombre: nombre.trim(), p_slug: slug.trim() })
-      if (fallo) { setError(fallo.code === '23505' ? 'Ese identificador ya está en uso.' : 'No se pudo crear el emprendimiento. Intentá nuevamente.'); return }
-      setNegocios(actuales => [...actuales, { id: data, nombre: nombre.trim(), slug: slug.trim(), activo: true }])
-      setNombre(''); setSlug('')
-    } catch { setError('No se pudo conectar para crear el emprendimiento.') }
-    finally { setOcupado(false) }
-  }
-
   async function salir() {
+    if(!confirmarSalida())return
     setOcupado(true); setError('')
     try {
       const { error: fallo } = await client.auth.signOut()
@@ -69,19 +67,54 @@ export default function Emprendimientos({ client, usuario }) {
     finally { setOcupado(false) }
   }
 
-  if (seleccionado) return <CatalogoAdministrable usuarioId={usuario.id} key={seleccionado.id} client={client} negocio={seleccionado} onVolver={() => setSeleccionado(null)} />
-  return <main className="app-shell access-shell">
-    <header className="app-header"><div><span className="eyebrow">EmpreGest</span><h1>Mis emprendimientos</h1><p>{usuario.email}</p></div><button className="button" disabled={ocupado} onClick={salir}>Cerrar sesión</button></header>
-    {error && <p role="alert" className="error-feedback">{error}</p>}
-    {negocios === null ? <><p role="status">Cargando emprendimientos…</p>{error && <button className="button" onClick={() => setIntento(intento + 1)}>Reintentar</button>}</> : <>
-      <div className="business-list">{negocios.map(negocio => <button className="button button-secondary" disabled={ocupado} key={negocio.id} onClick={() => setSeleccionado(negocio)}>{negocio.nombre}{!negocio.activo && ' (inactivo)'}</button>)}</div>
-      <section className="panel form-panel"><h2>Crear emprendimiento</h2><p>Creá tu negocio para comenzar a cargar productos.</p>
-        <form className="product-form" onSubmit={crear}><fieldset className="form-fields" disabled={ocupado}>
-          <div className="field-group"><label htmlFor="negocio-nombre">Nombre del emprendimiento</label><input id="negocio-nombre" value={nombre} onChange={e => setNombre(e.target.value)} required /></div>
-          <div className="field-group"><label htmlFor="negocio-slug">Identificador del emprendimiento</label><input id="negocio-slug" value={slug} onChange={e => setSlug(e.target.value)} placeholder="tequenos-gavidia" pattern="[a-z0-9]+(-[a-z0-9]+)*" required /><p className="field-help">Usá minúsculas, números y guiones. Debe ser único.</p></div>
-          <button className="button button-primary" type="submit">{ocupado ? 'Esperá un momento…' : 'Crear emprendimiento'}</button>
-        </fieldset></form>
-      </section>
-    </>}
+  useEffect(()=>{
+    if(!acceso?.habilitada||acceso.rol!=='emprendimiento'||ruta.startsWith('#/panel/'))return
+    let ultimo;try{ultimo=localStorage.getItem('empreges:negocio:'+usuario.id)}catch{/* Sin almacenamiento. */}
+    const n=acceso.negocios.find(n=>String(n.id)===ultimo)??acceso.negocios[0]
+    if(n)navegar(rutaNegocio(n.id,inicioNegocio(n)),{replace:true})
+  },[acceso,ruta,usuario.id])
+  const negocio=acceso?.habilitada&&acceso.negocios.find(n=>n.id===destino?.id)
+  if(acceso?.habilitada&&acceso.rol!=='cliente'&&ruta.startsWith('#/panel/')){
+    if(!negocio)return <main className="app-shell"><h1>Emprendimiento no disponible</h1><p role="alert">No tenés acceso a este emprendimiento.</p><button className="button" onClick={()=>navegar('#/cuenta')}>Volver a mi cuenta</button></main>
+    const seccion=destino.seccion,permiso=SECCIONES.find(s=>s[0]===seccion)?.[2],volver=()=>navegar(rutaNegocio(negocio.id,inicioNegocio(negocio)))
+    let contenido
+    if(!permiso||!negocio.permisos.includes(permiso))contenido=<main className="app-shell"><h1>Sección no disponible</h1><p role="alert">No tenés acceso a esta sección.</p></main>
+    else if(seccion==='productos')contenido=<CatalogoAdministrable client={client} negocio={negocio} onVolver={volver}/>
+    else if(seccion==='pedidos')contenido=<PanelPedidos client={client} usuarioId={usuario.id} negocio={negocio} rol={acceso.rol} email={usuario.email} onVolver={volver} avisosExternos/>
+    else if(seccion==='stock')contenido=<PanelStock client={client} negocio={negocio} usuarioId={usuario.id} onVolver={volver}/>
+    else if(seccion==='clientes')contenido=<PanelClientes client={client} negocio={negocio} usuarioId={usuario.id} onVolver={volver}/>
+    else if(seccion==='apariencia')contenido=<EditorApariencia client={client} negocio={negocio} onVolver={volver}/>
+    else contenido=<ConfigEntregas client={client} negocio={negocio} onVolver={volver}/>
+    return <PanelNegocio key={negocio.id} client={client} usuario={usuario} acceso={acceso} negocio={negocio} seccion={seccion} onSalir={salir}><div key={seccion+':'+negocio.permisos.join(',')+(seccion==='pedidos'&&ruta.includes('?nuevos=')?ruta.split('?')[1]:'')}>{error&&<p role="alert">{error}</p>}{contenido}</div></PanelNegocio>
+  }
+  const titulo = !acceso?.habilitada ? 'Acceso a tu cuenta' : acceso.rol === 'cliente' ? 'Mi cuenta de cliente' : acceso.rol === 'administrador' ? 'Administración del sistema' : 'Mis emprendimientos'
+  const esAdmin = acceso?.rol === 'administrador'
+  const esCliente = acceso?.rol === 'cliente'
+  return <main className="dashboard-page business-platform">
+    <header className="dashboard-topbar"><a className="store-brand" href="#/"><Marca /></a><div className="topbar-account"><span className="account-avatar" aria-hidden="true">{usuario.email?.[0]?.toUpperCase() ?? 'U'}</span><span className="account-email">{usuario.email}</span><button className="button button-outline" disabled={ocupado} onClick={salir}>Cerrar sesión</button></div></header>
+    <div className="dashboard-layout">
+      <aside className="dashboard-sidebar" aria-label="Tu espacio"><p className="sidebar-label">TU ESPACIO</p><a className={ruta === "#/admin/usuarios" ? undefined : "sidebar-current"} href="#/cuenta"><span aria-hidden="true">▦</span> Resumen</a>{acceso?.habilitada && !esCliente && <a href="#/cuenta"><span aria-hidden="true">▤</span> Emprendimientos</a>}{esAdmin && acceso?.habilitada && <a href="#/admin/usuarios" className={ruta === "#/admin/usuarios" ? "sidebar-current" : undefined} aria-current={ruta === "#/admin/usuarios" ? "page" : undefined}>Usuarios y permisos</a>}<a href="#/emprendimientos"><span aria-hidden="true">↗</span> Explorar tiendas</a>{esCliente && <a href="#/cuenta"><span aria-hidden="true">◎</span> Mi perfil</a>}</aside>
+      <div className="dashboard-content" id="resumen">
+        {esAdmin && acceso?.habilitada && ruta === '#/admin/usuarios' ? <AdministracionCuentas client={client} negocios={acceso.negocios}/> : <>
+        <section className={'welcome-panel welcome-' + (acceso?.habilitada ? acceso.rol : 'inactiva')}>
+          <div><InsigniaRol rol={acceso?.rol} habilitada={acceso ? acceso.habilitada : true} /><h1>{titulo}</h1><p>{!acceso ? 'Estamos preparando tu espacio.' : !acceso.habilitada ? 'Necesitás una cuenta habilitada para continuar.' : esAdmin ? 'Una vista central de los emprendimientos, sus productos y pedidos.' : esCliente ? 'Este es tu espacio personal en EmpreGest.' : 'Elegí un emprendimiento para consultar sus productos y pedidos.'}</p></div>
+          <span className="welcome-monogram" aria-hidden="true">{esAdmin ? 'A' : esCliente ? 'C' : 'E'}<span>.</span></span>
+        </section>
+        {error && <p role="alert" className="error-feedback">{error}</p>}
+        {!acceso ? <section className="access-state">{!error && <p role="status">Comprobando acceso…</p>}<button className="button button-secondary" onClick={() => setIntento(intento + 1)}>Reintentar</button></section> :
+          !acceso.habilitada ? <section className="access-state" id="mi-acceso"><span className="state-icon" aria-hidden="true">⊘</span><h2>Acceso pendiente de habilitación</h2><p role="alert">Tu cuenta no está habilitada. Contactá al administrador del sistema.</p><p>Podés cerrar sesión e ingresar con otra cuenta.</p></section> :
+            esCliente ? <>
+              <PerfilCliente client={client} usuario={usuario} />
+            </> : <>
+              {esAdmin && <dl className="dashboard-stats"><div><dt>{esAdmin ? 'Emprendimientos del sistema' : 'Emprendimientos asignados'}</dt><dd>{acceso.negocios.length.toString().padStart(2, '0')}</dd></div><div><dt>Con acceso a productos</dt><dd>{acceso.negocios.filter(n => n.permisos.includes('productos.ver')).length.toString().padStart(2, '0')}</dd></div><div><dt>Estado de tu cuenta</dt><dd className="stat-active"><span />Habilitada</dd></div></dl>}
+              <section id="emprendimientos"><div className="section-heading"><div><span className="eyebrow">{esAdmin ? 'VISTA GENERAL' : 'TUS NEGOCIOS'}</span><h2>{esAdmin ? 'Emprendimientos' : 'Emprendimientos'}</h2></div><span className="section-count">{acceso.negocios.length} {acceso.negocios.length === 1 ? 'emprendimiento' : 'emprendimientos'}</span></div>
+                {acceso.negocios.length === 0 ? <div className="access-state"><h3>Tu espacio está listo</h3><p>No tenés emprendimientos asignados. Contactá al administrador.</p></div> :
+                  <div className="business-grid">{acceso.negocios.map(n=><article className="business-card" key={n.id}><h3>{n.nombre}</h3><p>{n.activo?'Activo':'Inactivo'}</p><button className="button button-primary" onClick={()=>navegar(rutaNegocio(n.id,inicioNegocio(n)))}>Abrir panel de {n.nombre}</button></article>)}</div>}
+              </section>
+
+            </>}
+        </>}
+      </div>
+    </div>
   </main>
 }

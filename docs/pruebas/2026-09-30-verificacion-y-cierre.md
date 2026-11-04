@@ -1,5 +1,7 @@
 # Verificación local y pendientes de cierre — 30/09/2026
 
+> Actualización 01/10/2026: la base de roles y permisos ya está implementada localmente. Consultar [estado y guía actual de acceso](2026-10-01-acceso-y-permisos.md). Las referencias anteriores a autorregistro interno o autoalta de emprendimiento son históricas.
+
 ## Fuentes comprobadas
 
 - Chat «Borrador metodología pruebas»: cinco intercambios disponibles, incluida la decisión final de centralizar altas y permisos en el administrador.

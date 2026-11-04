@@ -1,15 +1,16 @@
+import ImagenProducto from './ImagenProducto.jsx'
 const formateadorPrecio = new Intl.NumberFormat('es-AR', {
   style: 'currency',
   currency: 'ARS',
 })
 
-function ProductoList({ productos, onEditar, onCambiarVisibilidad, guardando = false }) {
+function ProductoList({ productos, onEditar, onCambiarVisibilidad, guardando = false, puedeEditar = true, puedePublicar = true, onRetirar, onRestaurar, archivados = false, client }) {
   return (
     <section className="panel products-panel" aria-labelledby="list-title">
       <div className="panel-heading">
         <div>
-          <h2 id="list-title">Productos cargados</h2>
-          <p>Los productos nuevos comienzan ocultos.</p>
+          <h2 id="list-title">{archivados?'Productos archivados':'Productos cargados'}</h2>
+          <p>{archivados?'Conservan su historial. Al restaurarlos quedan ocultos.':'Los productos nuevos comienzan ocultos.'}</p>
         </div>
         <span className="product-count" aria-label={`${productos.length} productos`}>
           {productos.length}
@@ -18,18 +19,19 @@ function ProductoList({ productos, onEditar, onCambiarVisibilidad, guardando = f
 
       {productos.length === 0 ? (
         <div className="empty-state">
-          <strong>Todavía no hay productos</strong>
-          <p>Completá el formulario para crear el primero.</p>
+          <strong>{archivados?'No hay productos archivados':'Todavía no hay productos'}</strong>
+          {!archivados&&<p>Agregá productos para comenzar a armar tu catálogo.</p>}
         </div>
       ) : (
         <ul className="product-list">
           {productos.map((producto) => (
             <li className="product-item" key={producto.id}>
               <div className="product-main">
+                <ImagenProducto client={client} ruta={producto.imagenPath} nombre={producto.nombre} />
                 <div className="product-title-row">
                   <h3>{producto.nombre}</h3>
                   <span className={producto.visible ? 'status-badge status-visible' : 'status-badge'}>
-                    {producto.visible ? 'Visible' : 'Oculto'}
+                    {archivados?'Archivado':producto.visible ? 'Visible' : 'Oculto'}
                   </span>
                 </div>
                 {producto.descripcion && (
@@ -40,16 +42,10 @@ function ProductoList({ productos, onEditar, onCambiarVisibilidad, guardando = f
                     <dt>Precio</dt>
                     <dd>{formateadorPrecio.format(producto.precio)}</dd>
                   </div>
-                  {producto.imagenPath && (
-                    <div>
-                      <dt>Imagen</dt>
-                      <dd>{producto.imagenPath}</dd>
-                    </div>
-                  )}
                 </dl>
               </div>
               <div className="product-actions">
-                <button
+                {!archivados && puedePublicar && <button
                   className="button visibility-button"
                   disabled={guardando}
                   type="button"
@@ -58,8 +54,8 @@ function ProductoList({ productos, onEditar, onCambiarVisibilidad, guardando = f
                   aria-label={`${producto.visible ? 'Ocultar' : 'Mostrar'} ${producto.nombre} en el catálogo público`}
                 >
                   {producto.visible ? 'Ocultar' : 'Mostrar'}
-                </button>
-                <button
+                </button>}
+                {!archivados && puedeEditar && <button
                   className="button edit-button"
                   disabled={guardando}
                   type="button"
@@ -67,7 +63,9 @@ function ProductoList({ productos, onEditar, onCambiarVisibilidad, guardando = f
                   aria-label={`Editar ${producto.nombre}`}
                 >
                   Editar
-                </button>
+                </button>}
+                {onRetirar&&!archivados&&<button className="button button-secondary" disabled={guardando} onClick={()=>onRetirar(producto)} aria-label={'Eliminar '+producto.nombre}>Eliminar</button>}
+                {onRestaurar&&archivados&&<button className="button button-secondary" disabled={guardando} onClick={()=>onRestaurar(producto)} aria-label={'Restaurar '+producto.nombre}>Restaurar</button>}
               </div>
             </li>
           ))}

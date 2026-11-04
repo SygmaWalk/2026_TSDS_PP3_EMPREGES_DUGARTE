@@ -32,7 +32,7 @@ function CantidadItem({ item, onCantidad }) {
   )
 }
 
-export default function Carrito({ items, onCantidad, onQuitar, onVolver }) {
+export default function Carrito({ items, onCantidad, onQuitar, onVolver, onConfirmar }) {
   return (
     <section className="panel cart-panel" aria-labelledby="cart-title">
       <div className="panel-heading">
@@ -80,11 +80,11 @@ export default function Carrito({ items, onCantidad, onQuitar, onVolver }) {
         </strong>
       </div>
       <p className="field-help">
-        El subtotal incluye solo productos. La confirmación de pedidos todavía
-        no está disponible.
+        {onConfirmar ? 'El subtotal incluye solo productos. Iniciá sesión con tu cuenta de cliente para confirmar.' : 'El subtotal incluye solo productos. Para confirmar un pedido, abrí la tienda pública.'}
       </p>
+      {onConfirmar && <button className="button button-primary" disabled={!items.length} onClick={onConfirmar}>Continuar con el pedido</button>}
       <button
-        className="button button-primary continue-shopping"
+        className="button button-secondary continue-shopping"
         type="button"
         onClick={onVolver}
       >
