@@ -1,5 +1,15 @@
 # ND2026-5 — Carrito: implementación y pruebas
 
+## Actualización del 22/09/2026: conservación al recargar
+
+El usuario confirmó que el carrito debe sobrevivir también a la actualización de la página. Este requisito amplía el criterio original de conservarlo durante la navegación.
+
+Implementado en la rama local de persistencia: almacenamiento en el navegador separado por cuenta y emprendimiento; se guardan identificadores y cantidades y se recuperan los precios y la disponibilidad del catálogo actual. Casos CP-CAR-P01 a CP-CAR-P07 en `carritoStorage.test.js` y `CarritoPersistente.test.jsx`. No se sincroniza entre dispositivos. Si el navegador impide guardar, se muestra un aviso.
+
+Guía actual: [Pruebas manuales y base de datos](PRUEBAS-MANUALES.md). El contenido siguiente conserva el contexto histórico de la preparación del frontend; sus limitaciones de persistencia han sido superadas en la versión local actual. Sigue pendiente integrar el flujo público y la confirmación de pedidos.
+
+## Preparación original del frontend
+
 Estado: avance de frontend para revisión. No equivale a aceptación de la historia completa.
 
 ## Alcance

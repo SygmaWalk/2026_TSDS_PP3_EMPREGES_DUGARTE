@@ -1,0 +1,123 @@
+import assert from 'node:assert/strict'
+import {execFileSync} from 'node:child_process'
+import {randomUUID} from 'node:crypto'
+import {createClient} from '@supabase/supabase-js'
+import {chromium} from '@playwright/test'
+const status=JSON.parse(execFileSync(process.execPath,['node_modules/supabase/dist/supabase.js','status','-o','json'],{encoding:'utf8',stdio:['ignore','pipe','pipe']}))
+assert.equal(new URL(status.API_URL).hostname,'127.0.0.1')
+const opts={auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}
+const admin=createClient(status.API_URL,status.SECRET_KEY||status.SERVICE_ROLE_KEY,opts)
+const nuevo=()=>createClient(status.API_URL,status.PUBLISHABLE_KEY||status.ANON_KEY,opts)
+const actor=nuevo(),buyer=nuevo(),lector=nuevo(),anon=nuevo(),usuarios=[],negocios=[]
+let browser,checks=0
+function data(r){assert.ifError(r.error);return r.data}
+function ok(cond,msg){assert.ok(cond,msg);console.log('PASS '+(++checks)+': '+msg)}
+async function cuenta(c,rol){const email='qa-archivo-'+randomUUID()+'@example.test',password=randomUUID()+'Aa1!';const u=data(await admin.auth.admin.createUser({email,password,email_confirm:true})).user;usuarios.push(u.id);data(await admin.from('cuentas_acceso').update({rol}).eq('usuario_id',u.id));data(await c.auth.signInWithPassword({email,password}));return {...u,email,password}}
+try{
+ const a=await cuenta(actor,'emprendimiento'),b=await cuenta(buyer,'cliente'),l=await cuenta(lector,'emprendimiento')
+ for(let i=0;i<2;i++)negocios.push(data(await admin.from('emprendimientos').insert({nombre:'Prueba archivo '+i,slug:'qa-archivo-'+randomUUID()}).select().single()))
+ const n=negocios[0].id
+ for(const [u,permisos] of [[a,['productos.ver','productos.editar','productos.crear','productos.publicar','pedidos.ver','stock.ver']],[l,['productos.ver']]]){
+ data(await admin.from('miembros_emprendimiento').insert({usuario_id:u.id,emprendimiento_id:n}))
+ data(await admin.from('permisos_miembro').insert(permisos.map(permiso=>({usuario_id:u.id,emprendimiento_id:n,permiso}))))
+ }
+ const producto=async(nombre,negocio=n)=>data(await admin.from('productos').insert({emprendimiento_id:negocio,nombre,precio:100,visible:true}).select().single())
+ const mover=async(p)=>data(await admin.from('movimientos_stock').insert({emprendimiento_id:n,producto_id:p.id,clave:randomUUID(),tipo:'Entrada',cantidad:10,motivo:'Prueba de archivo',referencia:''}))
+ const retiro=(p,accion='consultar',c=actor,negocio=n)=>c.rpc('retirar_producto',{p_negocio:negocio,p_producto:p.id,p_accion:accion})
+ const p=await producto('Eliminar sin historial')
+ ok(data(await retiro(p)).accion==='eliminar','propone eliminar sin historial')
+ for(const c of [anon,lector,buyer])ok(!!(await retiro(p,'eliminar',c)).error,'rechaza retiro sin permisos')
+ const ajeno=await producto('Producto ajeno',negocios[1].id)
+ ok(!!(await retiro(ajeno,'eliminar')).error,'aislamiento entre negocios')
+ ok(data(await retiro(p,'eliminar')).accion==='eliminar','elimina producto sin historial')
+ ok(!data(await admin.from('productos').select('id').eq('id',p.id).maybeSingle()),'eliminación persistida')
+ const h=await producto('Producto con historial');await mover(h)
+ const solicitud={p_clave:randomUUID(),p_negocio:n,p_contacto:{nombre:'Comprador QA',telefono:'1123456789',metodo_pago:'Efectivo',entrega:{modalidad:'retiro'}},p_items:[{producto_id:h.id,cantidad:1,precio_centavos:10000}]}
+ ok((await anon.rpc('confirmar_pedido',solicitud)).error?.code==='42501','invitado no confirma por API')
+ ok((await actor.rpc('confirmar_pedido',solicitud)).error?.code==='42501','cuenta interna no confirma compra')
+ const pedido=data(await buyer.rpc('confirmar_pedido',solicitud))
+ ok(!!pedido.id,'cliente registrado confirma')
+ ok(data(await buyer.rpc('confirmar_pedido',solicitud)).id===pedido.id,'reintento no duplica pedido')
+ ok(data(await admin.from('pedidos').select('cliente_usuario_id').eq('id',pedido.id).single()).cliente_usuario_id===b.id,'pedido vinculado al cliente autenticado')
+ ok(data(await retiro(h)).accion==='archivar','historial propone archivar')
+ ok((await retiro(h,'eliminar')).error?.code==='PT409','no elimina un producto con historial')
+ const combo=await producto('Combo dependiente')
+ data(await admin.from('componentes_producto').insert({emprendimiento_id:n,producto_id:combo.id,componente_id:h.id,cantidad:2}))
+ ok(data(await retiro(h)).dependencias[0].nombre===combo.nombre,'informa qué producto lo utiliza')
+ ok((await retiro(h,'archivar')).error?.code==='22023','bloquea archivo de componente utilizado')
+ data(await admin.from('componentes_producto').delete().eq('producto_id',combo.id))
+ data(await retiro(h,'archivar'))
+ const archivado=data(await admin.from('productos').select('*').eq('id',h.id).single())
+ ok(archivado.archivado&&!archivado.visible,'archivar lo oculta en servidor')
+ ok(data(await anon.from('productos').select('id').eq('id',h.id)).length===0,'archivado no aparece públicamente')
+ ok(data(await admin.from('detalles_pedido').select('*').eq('pedido_id',pedido.id)).length===1,'conserva detalle histórico')
+ ok(data(await admin.from('movimientos_stock').select('id').eq('producto_id',h.id)).length===2,'conserva movimientos')
+ ok(!!(await actor.from('productos').update({visible:true}).eq('id',h.id)).error,'impide publicar archivado')
+ ok(!!(await actor.from('productos').update({archivado:false}).eq('id',h.id)).error,'impide restaurar con escritura directa')
+ const comp=await actor.rpc('guardar_producto_compuesto',{p_negocio:n,p_producto:combo.id,p_nombre:combo.nombre,p_descripcion:null,p_precio:100,p_imagen:null,p_combo:true,p_componentes:[{componente_id:h.id,cantidad:1}]})
+ ok(!!comp.error,'no permite nuevos combos con componente archivado')
+ ok((await buyer.rpc('confirmar_pedido',{...solicitud,p_clave:randomUUID()})).error?.code==='22023','no compra producto archivado')
+ data(await retiro(h,'restaurar'))
+ const restaurado=data(await admin.from('productos').select('archivado,visible').eq('id',h.id).single())
+ ok(!restaurado.archivado&&!restaurado.visible,'restaura oculto')
+ const carrera=await producto('Historial concurrente');ok(data(await retiro(carrera)).accion==='eliminar','preconsulta sin historial')
+ await mover(carrera)
+ ok((await retiro(carrera,'eliminar')).error?.code==='PT409','historial nuevo obliga a revisar confirmación')
+ data(await admin.from('permisos_miembro').delete().eq('usuario_id',a.id).eq('permiso','productos.publicar'))
+ ok((await retiro(carrera)).error?.code==='42501','revocación efectiva con sesión abierta')
+ data(await admin.from('permisos_miembro').insert({usuario_id:a.id,emprendimiento_id:n,permiso:'productos.publicar'}))
+ const ui=await producto('Borrar desde interfaz')
+ browser=await chromium.launch();const page=await browser.newPage()
+ await page.goto('http://127.0.0.1:5173/#/ingresar')
+ await page.getByLabel('Correo electrónico').fill(a.email);await page.getByLabel('Contraseña',{exact:true}).fill(a.password);await page.getByRole('button',{name:'Ingresar',exact:true}).click()
+ await page.getByRole('link',{name:'Productos',exact:true}).click()
+ await page.getByRole('button',{name:'Eliminar '+ui.nombre,exact:true}).click()
+ for(const width of [1360,390]){
+ await page.setViewportSize({width,height:900})
+ for(const theme of ['light','dark']){
+ await page.evaluate(t=>document.documentElement.dataset.theme=t,theme)
+ ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'confirmación sin desborde '+width+' '+theme)
+ await page.screenshot({path:'test-results/archivo-producto-'+width+'-'+theme+'.png',fullPage:true})
+ }
+ }
+ await page.setViewportSize({width:1360,height:900})
+ await page.getByRole('button',{name:'Volver',exact:true}).click()
+ ok(await page.getByRole('heading',{name:ui.nombre,exact:true}).count()===1,'cancelar confirma que no borra')
+ await page.getByRole('button',{name:'Eliminar '+ui.nombre,exact:true}).click()
+ await page.getByRole('button',{name:'Eliminar definitivamente',exact:true}).click()
+ await page.getByRole('status').filter({hasText:'Producto eliminado definitivamente.'}).waitFor()
+ ok(await page.getByRole('heading',{name:ui.nombre,exact:true}).count()===0,'elimina desde navegador')
+ await page.getByRole('button',{name:'Eliminar '+h.nombre,exact:true}).click()
+ await page.getByRole('button',{name:'Archivar producto',exact:true}).click()
+ await page.getByLabel('Mostrar',{exact:true}).selectOption('archivados')
+ await page.getByRole('button',{name:'Restaurar '+h.nombre,exact:true}).click()
+ await page.getByRole('button',{name:'Restaurar producto',exact:true}).click()
+ await page.getByRole('status').filter({hasText:'Producto restaurado.'}).waitFor()
+ ok(true,'archiva, filtra y restaura en navegador')
+ const guest=await browser.newPage()
+ // El producto usado para la compra permanece oculto tras restaurar.
+ data(await actor.from('productos').update({visible:true}).eq('id',h.id))
+ await guest.goto('http://127.0.0.1:5173/#/tienda/'+negocios[0].slug)
+ await guest.getByRole('button',{name:'Agregar '+h.nombre+' al carrito',exact:true}).click()
+ await guest.getByRole('button',{name:'Carrito (1)',exact:true}).click()
+ await guest.getByRole('button',{name:/Confirmar pedido|Continuar/}).click()
+ await guest.getByRole('heading',{name:'Ingresá para confirmar tu pedido'}).waitFor()
+ await guest.getByRole('link',{name:'Iniciar sesión',exact:true}).click()
+ await guest.getByLabel('Correo electrónico').fill(b.email);await guest.getByLabel('Contraseña',{exact:true}).fill(b.password);await guest.getByRole('button',{name:'Ingresar',exact:true}).click()
+ await guest.waitForURL('**/#/tienda/'+negocios[0].slug)
+ await guest.getByRole('button',{name:'Carrito (1)',exact:true}).waitFor()
+ ok(true,'invitado vuelve tras iniciar sesión y conserva carrito')
+ await guest.getByRole('button',{name:'Carrito (1)',exact:true}).click()
+ await guest.getByRole('button',{name:'Continuar con el pedido',exact:true}).click()
+ await guest.getByLabel('Nombre de contacto').fill('Cliente navegador')
+ await guest.getByLabel('Teléfono de contacto').fill('1123456789')
+ await guest.getByLabel('¿Cómo pensás pagar?').selectOption('Efectivo')
+ await guest.getByRole('button',{name:'Confirmar pedido',exact:true}).click()
+ await guest.getByRole('heading',{name:'Tu pedido quedó registrado'}).waitFor()
+ ok(true,'cliente confirma compra completa tras regresar del ingreso')
+ console.log('TOTAL '+checks+' comprobaciones')
+}finally{
+ await browser?.close()
+ for(const n of negocios)for(const tabla of ['movimientos_stock','consumos_stock_pedido','pedidos','componentes_producto','productos','emprendimientos'])data(await admin.from(tabla).delete().eq(tabla==='emprendimientos'?'id':'emprendimiento_id',n.id))
+ for(const id of usuarios)data(await admin.auth.admin.deleteUser(id))
+}

@@ -1,216 +1,57 @@
-import { useState } from 'react'
+import {destinoTrasIngreso,errorRetornoOAuth} from './features/acceso/oauth.js'
+import ThemeToggle from './ThemeToggle.jsx'
+import {useRuta} from './navigation.js'
+import Inicio from './features/catalogo/Inicio.jsx'
+import { leerPerfil } from './features/cliente/perfil.js'
+import TiendaPublica from './features/catalogo/TiendaPublica.jsx'
+import { useEffect, useState } from 'react'
+import { supabase, supabasePublic } from './lib/supabase.js'
+import Acceso from './features/acceso/Acceso.jsx'
+import Emprendimientos from './features/acceso/Emprendimientos.jsx'
 import './App.css'
-import ProductoForm from './features/productos/ProductoForm.jsx'
-import ProductoList from './features/productos/ProductoList.jsx'
-import {
-  actualizarProducto,
-  cambiarVisibilidadProducto,
-  crearProducto,
-  obtenerProductosVisibles,
-} from './features/productos/producto.js'
-import CatalogoPreview from './features/productos/CatalogoPreview.jsx'
-import Carrito from './features/carrito/Carrito.jsx'
-import {
-  agregarAlCarrito,
-  cambiarCantidad,
-  quitarDelCarrito,
-  sincronizarCarrito,
-} from './features/carrito/carrito.js'
+import './features/catalogo/experiencia.css'
 
-function App() {
-  const [productos, setProductos] = useState([])
-  const [productoEnEdicion, setProductoEnEdicion] = useState(null)
-  const [mensaje, setMensaje] = useState('')
-  const [error, setError] = useState('')
-  const [vista, setVista] = useState('productos')
-  const [carrito, setCarrito] = useState([])
-  const unidades = carrito.reduce((total, item) => total + item.cantidad, 0)
+function AppContent({ client = supabase, publicClient = supabasePublic }) {
+  const ruta=useRuta()
+  const [acceso, setAcceso] = useState({ cargando: true, usuario: null, error: '' })
+  useEffect(() => {
+    if (!client) return
+    const errorOAuth=errorRetornoOAuth()
+    const teniaCodigo=new URLSearchParams(window.location.search).has('code')
+    let vigente = true
+    let eventoRecibido = false
+    const { data: { subscription } } = client.auth.onAuthStateChange((_evento, session) => {
+      eventoRecibido = true
+      if (['SIGNED_IN','INITIAL_SESSION'].includes(_evento) && session?.user && ['#/ingresar', '#/registro'].includes(window.location.hash)) window.location.hash=destinoTrasIngreso()
+      if (_evento === 'SIGNED_OUT' && !window.location.hash.startsWith('#/tienda/') && !['', '#/', '#/emprendimientos'].includes(window.location.hash)) window.location.hash = '#/ingresar'
+      if (vigente) setAcceso({ cargando: false, usuario: session?.user ?? null, error: session?.user?'':errorOAuth||(teniaCodigo?'No se pudo completar el acceso con Google. Volvé a intentarlo.':'') })
+    })
+    client.auth.getSession().then(({ data, error }) => {
+      if(!vigente)return
+      if(errorOAuth||teniaCodigo){
+        const url=new URL(window.location.href)
+        for(const campo of ['code','error','error_code','error_description'])url.searchParams.delete(campo)
+        if(errorOAuth)url.hash='#/ingresar'
+        window.history.replaceState(window.history.state,'',url.pathname+url.search+url.hash)
+        window.dispatchEvent(new HashChangeEvent('hashchange'))
+      }
+      if (!vigente || eventoRecibido) return
+      if(data?.session?.user&&['#/ingresar','#/registro'].includes(window.location.hash))window.location.hash=destinoTrasIngreso()
+      setAcceso({ cargando: false, usuario: data?.session?.user ?? null,
+        error: errorOAuth || (error || (teniaCodigo&&!data?.session) ? 'No se pudo completar el acceso. Volvé a ingresar.' : '') })
+    }).catch(() => {
+      if (vigente && !eventoRecibido) setAcceso({ cargando: false, usuario: null, error: 'No se pudo recuperar la sesión.' })
+    })
+    return () => { vigente = false; subscription.unsubscribe() }
+  }, [client])
 
-  function navegar(siguienteVista) {
-    setVista(siguienteVista)
-    setMensaje('')
-    setError('')
-  }
-
-  function actualizarCatalogo(siguientes) {
-    // Calculamos primero: si el nuevo precio excede el límite, no queda un cambio parcial.
-    const carritoActualizado = sincronizarCarrito(carrito, siguientes)
-    setProductos(siguientes)
-    setCarrito(carritoActualizado)
-  }
-
-  function agregarProducto(producto) {
-    try {
-      setCarrito(agregarAlCarrito(carrito, producto))
-      setError('')
-      setMensaje(`Se agregó “${producto.nombre}” al carrito.`)
-    } catch (fallo) {
-      setError(fallo.message)
-      setMensaje('')
-    }
-  }
-
-  function actualizarCantidad(id, cantidad) {
-    try {
-      setCarrito(cambiarCantidad(carrito, id, cantidad))
-      setError('')
-      setMensaje('Se actualizó la cantidad y el subtotal.')
-    } catch (fallo) {
-      setError(fallo.message)
-      setMensaje('')
-    }
-  }
-
-  function quitarProducto(id) {
-    setCarrito(quitarDelCarrito(carrito, id))
-    setError('')
-    setMensaje('Se quitó el producto del carrito.')
-  }
-
-  function guardarProducto(datos) {
-    try {
-      const producto = productoEnEdicion
-        ? actualizarProducto(productoEnEdicion, datos)
-        : crearProducto(datos)
-      const siguientes = productoEnEdicion
-        ? productos.map((actual) =>
-            actual.id === producto.id ? producto : actual,
-          )
-        : [...productos, producto]
-      actualizarCatalogo(siguientes)
-      setProductoEnEdicion(null)
-      setError('')
-      setMensaje(
-        productoEnEdicion
-          ? `Se actualizó “${producto.nombre}”. Su precio también se actualiza en el carrito.`
-          : `Se creó “${producto.nombre}” como producto oculto.`,
-      )
-    } catch (fallo) {
-      setError(fallo.message)
-      setMensaje('')
-      return false
-    }
-  }
-
-  function comenzarEdicion(producto) {
-    setProductoEnEdicion(producto)
-    setMensaje('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  function cancelarEdicion() {
-    setProductoEnEdicion(null)
-    setMensaje('No se realizaron cambios.')
-  }
-
-  function cambiarVisibilidad(productoSeleccionado) {
-    const productoActualizado = cambiarVisibilidadProducto(productoSeleccionado)
-
-    actualizarCatalogo(
-      productos.map((producto) =>
-        producto.id === productoActualizado.id ? productoActualizado : producto,
-      ),
-    )
-    setError('')
-    setMensaje(
-      productoActualizado.visible
-        ? `“${productoActualizado.nombre}” ahora aparece en el catálogo público.`
-        : `“${productoActualizado.nombre}” quedó oculto y se retiró del carrito si estaba seleccionado.`,
-    )
-  }
-
-  return (
-    <main className="app-shell">
-      <header className="app-header">
-        <div>
-          <span className="eyebrow">EmpreGest</span>
-          <h1>
-            {vista === 'productos'
-              ? 'Productos'
-              : vista === 'catalogo'
-                ? 'Catálogo'
-                : 'Carrito'}
-          </h1>
-          <p>Gestioná tu catálogo y probá el recorrido de compra.</p>
-        </div>
-        <span className="demo-badge">Modo demostración</span>
-      </header>
-
-      <div className="demo-note" role="note">
-        Demostración: productos y carrito se conservan al cambiar de pantalla,
-        pero se pierden al recargar. Todavía no se pueden confirmar pedidos.
-      </div>
-
-      <nav className="view-nav" aria-label="Pantallas de demostración">
-        <button
-          className="button"
-          aria-current={vista === 'productos' ? 'page' : undefined}
-          onClick={() => navegar('productos')}
-        >
-          Productos
-        </button>
-        <button
-          className="button"
-          aria-current={vista === 'catalogo' ? 'page' : undefined}
-          onClick={() => navegar('catalogo')}
-        >
-          Catálogo
-        </button>
-        <button
-          className="button"
-          aria-current={vista === 'carrito' ? 'page' : undefined}
-          onClick={() => navegar('carrito')}
-        >
-          Carrito ({unidades})
-        </button>
-      </nav>
-
-      {error && (
-        <p className="error-feedback" role="alert">
-          {error}
-        </p>
-      )}
-      {mensaje && (
-        <p className="feedback" role="status">
-          {mensaje}
-        </p>
-      )}
-
-      {vista === 'catalogo' && (
-        <CatalogoPreview
-          productos={obtenerProductosVisibles(productos)}
-          onAgregar={agregarProducto}
-        />
-      )}
-      {vista === 'carrito' && (
-        <Carrito
-          items={carrito}
-          onCantidad={actualizarCantidad}
-          onQuitar={quitarProducto}
-          onVolver={() => navegar('catalogo')}
-        />
-      )}
-      {vista === 'productos' && (
-        <div className="workspace-grid">
-          <ProductoForm
-            key={productoEnEdicion?.id ?? 'nuevo'}
-            producto={productoEnEdicion}
-            productosExistentes={productos}
-            onGuardar={guardarProducto}
-            onCancelar={cancelarEdicion}
-          />
-          <div className="right-column">
-            <ProductoList
-              productos={productos}
-              onEditar={comenzarEdicion}
-              onCambiarVisibilidad={cambiarVisibilidad}
-            />
-            <CatalogoPreview productos={obtenerProductosVisibles(productos)} />
-          </div>
-        </div>
-      )}
-    </main>
-  )
+  if (!client) return <main className="app-shell"><h1>EmpreGest</h1><p role="alert">Falta configurar la conexión. Consultá la guía de instalación del proyecto.</p></main>
+  if (ruta.startsWith('#/tienda/')) return <TiendaPublica key={ruta + (acceso.usuario?.id ?? 'invitado')} client={publicClient} pedidoClient={acceso.cargando ? null : acceso.usuario ? client : publicClient} perfil={leerPerfil(acceso.usuario)} usuario={acceso.usuario} identidad={acceso.usuario?.id ?? 'invitado'} slug={ruta.slice(9)} />
+  if (acceso.cargando) return <main className="app-shell"><p role="status">Recuperando sesión…</p></main>
+  if (['', '#/', '#/emprendimientos'].includes(ruta)) return <Inicio key={ruta} client={publicClient} usuario={acceso.usuario} />
+  if (!acceso.usuario) return <Acceso key={ruta} registro={ruta === '#/registro'} client={client} errorInicial={acceso.error} />
+  // Un cambio de usuario desmonta todos los datos y el carrito de la sesión anterior.
+  return <Emprendimientos key={acceso.usuario.id} client={client} usuario={acceso.usuario} />
 }
 
-export default App
+export default function App(props){return <><AppContent {...props}/><ThemeToggle/></>}

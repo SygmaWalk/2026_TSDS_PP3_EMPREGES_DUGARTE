@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
-import App from './App.jsx'
+import App from './Workspace.jsx'
 
 beforeEach(() => vi.spyOn(window, 'scrollTo').mockImplementation(() => {}))
 
