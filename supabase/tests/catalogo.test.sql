@@ -1,5 +1,7 @@
 -- Fixtures y extension de pruebas quedan dentro de una transaccion revertida.
 begin;
+-- El ejecutor remoto inicia con un rol temporal. Preparar fixtures como postgres.
+set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select no_plan();
@@ -62,7 +64,7 @@ select throws_ok($q$delete from public.productos where id = -97002$q$, '42501', 
 select throws_ok($q$insert into public.emprendimientos (nombre,slug) values ('Intruso','intruso')$q$, '42501', null, 'Anon no crea negocios');
 select throws_ok($q$update public.emprendimientos set activo = true where id = -97003$q$, '42501', null, 'Anon no activa negocios');
 select throws_ok($q$delete from public.emprendimientos where id = -97003$q$, '42501', null, 'Anon no elimina negocios');
-reset role;
+set local role postgres;
 
 set local role authenticated;
 select is((select count(*) from public.emprendimientos where id in (-97001,-97002,-97003)), 2::bigint, 'Autenticarse no permite ver negocios inactivos');
@@ -73,7 +75,7 @@ select throws_ok($q$delete from public.productos where id = -97002$q$, '42501', 
 select throws_ok($q$insert into public.emprendimientos (nombre,slug) values ('Intruso','intruso')$q$, '42501', null, 'Authenticated no crea negocios');
 select results_eq($q$update public.emprendimientos set activo = true where id = -97003 returning id$q$, ARRAY[]::bigint[], 'Authenticated sin rol no activa negocios');
 select throws_ok($q$delete from public.emprendimientos where id = -97003$q$, '42501', null, 'Authenticated no elimina negocios');
-reset role;
+set local role postgres;
 
 select * from finish();
 rollback;

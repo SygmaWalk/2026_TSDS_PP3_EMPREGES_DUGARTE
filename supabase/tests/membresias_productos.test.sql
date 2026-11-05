@@ -1,4 +1,6 @@
 begin;
+-- El ejecutor remoto inicia con un rol temporal. Preparar fixtures como postgres.
+set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select no_plan();
@@ -54,16 +56,16 @@ select lives_ok($q$update public.cuentas_acceso set habilitada=false where usuar
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000008003","role":"authenticated"}',true);
 select results_eq($q$update public.productos set precio=260 where id=-98001 returning precio$q$,ARRAY[260::numeric],'Concesión funciona sin renovar JWT');
 select throws_ok($q$update public.productos set visible=false where id=-98001$q$,'42501',null,'Editor sin publicar no cambia visibilidad');
-reset role;
+set local role postgres;
 delete from public.permisos_miembro where usuario_id='00000000-0000-0000-0000-000000008003' and permiso='productos.editar';
 set local role authenticated;
 select results_eq($q$update public.productos set precio=1 where id=-98001 returning id$q$,ARRAY[]::bigint[],'Revocación efectiva con el mismo JWT');
-reset role;
+set local role postgres;
 update public.miembros_emprendimiento set habilitada=false where usuario_id='00000000-0000-0000-0000-000000008003';
 update public.productos set visible=false where id=-98001;
 set local role authenticated;
 select is((select count(*) from public.productos where id=-98001),0::bigint,'Membresía deshabilitada retira lectura interna');
-reset role;
+set local role postgres;
 update public.miembros_emprendimiento set habilitada=true where usuario_id='00000000-0000-0000-0000-000000008003';
 update public.cuentas_acceso set habilitada=false where usuario_id='00000000-0000-0000-0000-000000008003';
 set local role authenticated;
@@ -74,12 +76,12 @@ select is((select count(*) from public.productos where id=-98001),0::bigint,'Cli
 select is((select count(*) from public.productos where id=-98003),1::bigint,'Cliente puede consultar catálogo público');
 select is((select count(*) from public.cuentas_acceso),1::bigint,'Cliente solo consulta su cuenta');
 select throws_ok($q$insert into public.miembros_emprendimiento(emprendimiento_id,usuario_id) values(-98001,auth.uid())$q$,'42501',null,'Cliente no se autoasigna membresía');
-reset role;
+set local role postgres;
 set local role anon;
 select set_config('request.jwt.claims','{"role":"anon"}',true);
 select is((select count(*) from public.productos where id=-98003),1::bigint,'Invitado mantiene catálogo público');
 select is((select count(*) from public.productos where id=-98001),0::bigint,'Invitado no consulta ocultos');
 select throws_ok($q$select * from public.cuentas_acceso$q$,'42501',null,'Invitado no consulta cuentas');
-reset role;
+set local role postgres;
 select * from finish();
 rollback;

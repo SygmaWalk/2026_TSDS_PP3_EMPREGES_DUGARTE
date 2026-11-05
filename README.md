@@ -35,7 +35,9 @@ El código incluye el botón y retorno de OAuth con PKCE. `VITE_AUTH_GOOGLE_ENAB
 
 La aplicación retorna a `ORIGEN/#/ingresar`. El origen del sitio debe estar permitido en la configuración de autenticación de Supabase. La confirmación real del recorrido con Google sigue pendiente.
 
-Estado al 03/11/2026: Supabase remoto tenía 3 de las 23 migraciones; su actualización debe verificarse antes de apuntar el frontend a la nube. No existe todavía un proyecto Vercel. Configuración prevista: Vite, compilación `npm run build`, salida `dist` y las variables públicas anteriores. El sitio utiliza rutas con fragmento (`#/...`).
+Al 05/11/2026, Supabase en la nube tiene las 23 migraciones de este repositorio y el proveedor Google habilitado. Para probar desde otra PC, crear `.env.cloud.local` con `VITE_SUPABASE_URL=https://htvitbptpfpackzepktu.supabase.co`, la clave publicable del proyecto en `VITE_SUPABASE_PUBLISHABLE_KEY` y `VITE_AUTH_GOOGLE_ENABLED=true`. Ejecutar `npm run dev -- --mode cloud` para usar esa configuración. El entorno local de Docker sigue disponible con `npm run dev` y `.env.local`.
+
+El proyecto Vercel se llama `2026-tsds-pp-3-empreges-dugarte`. Usar Vite, `npm run build`, salida `dist` y las tres variables públicas anteriores. Antes de dar por aceptado el acceso con Google, verificar el dominio de producción, su dirección de retorno en Supabase y el regreso a la tienda con el carrito.
 
 ## Comprobaciones
 

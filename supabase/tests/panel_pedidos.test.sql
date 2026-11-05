@@ -1,4 +1,6 @@
 begin;
+-- El ejecutor remoto inicia con un rol temporal. Preparar fixtures como postgres.
+set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 select no_plan();
@@ -43,22 +45,22 @@ select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000
 select is((select count(*) from pedidos where id in(-99101,-99102)),0::bigint,'Cliente no entra al panel interno');
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000009105","role":"authenticated"}',true);
 select is((select count(*) from pedidos where id in(-99101,-99102)),2::bigint,'Administrador consulta ambos negocios');
-reset role;
+set local role postgres;
 delete from permisos_miembro where usuario_id='00000000-0000-0000-0000-000000009101';
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000009101","role":"authenticated"}',true);
 select is((select count(*) from pedidos where id=-99101),0::bigint,'Revocar permiso retira lectura sin renovar JWT');
 select is((select count(*) from detalles_pedido where pedido_id=-99101),0::bigint,'Revocar permiso retira detalle directo');
-reset role;
+set local role postgres;
 insert into permisos_miembro values(-99101,'00000000-0000-0000-0000-000000009101','pedidos.ver');
 update miembros_emprendimiento set habilitada=false where usuario_id='00000000-0000-0000-0000-000000009101';
 set local role authenticated;
 select is((select count(*) from pedidos where id=-99101),0::bigint,'Asociación deshabilitada retira lectura');
-reset role;
+set local role postgres;
 update miembros_emprendimiento set habilitada=true where usuario_id='00000000-0000-0000-0000-000000009101';
 update cuentas_acceso set habilitada=false where usuario_id='00000000-0000-0000-0000-000000009101';
 set local role authenticated;
 select is((select count(*) from pedidos where id=-99101),0::bigint,'Cuenta deshabilitada retira lectura');
-reset role;
+set local role postgres;
 select * from finish();
 rollback;
