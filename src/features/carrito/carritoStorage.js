@@ -1,4 +1,4 @@
-import { agregarAlCarrito, cambiarCantidad } from './carrito.js'
+import { agregarAlCarrito, cambiarCantidad, personalizarItem } from './carrito.js'
 
 export function claveCarrito(usuarioId, emprendimientoId) {
   if (!usuarioId || emprendimientoId == null) return null
@@ -14,6 +14,7 @@ export function recuperarCarrito(clave, productos) {
     if (guardado.version !== 1 || !Array.isArray(guardado.items)) throw new Error('Formato inválido')
     let items = []
     let stockAjustado=false
+    let adicionalRetirado=false
     for (const seleccion of guardado.items) {
       if (!seleccion || !Number.isSafeInteger(seleccion.cantidad) || seleccion.cantidad < 1) continue
       const producto = productos.find(actual => String(actual.id) === String(seleccion.id))
@@ -23,12 +24,17 @@ export function recuperarCarrito(clave, productos) {
         let cantidad=seleccion.cantidad
         if(producto.stockDisponible!==undefined&&cantidad>producto.stockDisponible){stockAjustado=true;cantidad=producto.stockDisponible}
         if(cantidad<1)continue
-        items = cambiarCantidad(agregarAlCarrito(items, producto), producto.id, cantidad)
+        const siguientes = cambiarCantidad(agregarAlCarrito(items, producto), producto.id, cantidad)
+        if (seleccion.adicionales?.length) {
+          try {
+            items = siguientes.map(i => i.id === producto.id ? personalizarItem(i,producto,seleccion.adicionales) : i)
+          } catch { adicionalRetirado=true }
+        } else items=siguientes
       } catch {
         // Se descarta solo la selección incompatible o fuera del rango de cálculo seguro.
       }
     }
-    return { items, aviso: stockAjustado?'El carrito se ajustó a las existencias actuales. Revisá las cantidades.':'' }
+    return { items, aviso: adicionalRetirado?'Se retiró una selección con adicionales que ya no están disponibles. Revisá el carrito.':stockAjustado?'El carrito se ajustó a las existencias actuales. Revisá las cantidades.':'' }
   } catch {
     return { items: [], aviso: 'No se pudo recuperar el carrito guardado en este navegador.' }
   }
@@ -40,7 +46,7 @@ export function guardarCarrito(clave, items) {
     if (items.length === 0) window.localStorage.removeItem(clave)
     else window.localStorage.setItem(clave, JSON.stringify({
       version: 1,
-      items: items.map(({ id, cantidad }) => ({ id, cantidad })),
+      items: items.map(({ id, cantidad, adicionales }) => ({ id, cantidad, ...(adicionales?.length ? {adicionales:adicionales.map(a=>a.id)} : {}) })),
     }))
     return ''
   } catch {

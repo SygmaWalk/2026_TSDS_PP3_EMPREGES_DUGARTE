@@ -34,6 +34,13 @@ export function calcularSubtotalCentavos(items) {
   }, 0)
 }
 
+export function personalizarItem(item, producto, seleccion) {
+  const disponibles = producto.adicionales ?? []
+  const extras = disponibles.filter(a => seleccion.includes(a.id))
+  if (extras.length !== seleccion.length) throw Error('Un adicional ya no está disponible. Revisá el carrito.')
+  return {...item, adicionales:extras, precioCentavos:precioACentavos(producto.precio) + extras.reduce((s,a) => s+a.centavos,0)}
+}
+
 export function agregarAlCarrito(items, producto) {
   if (
     !producto ||
@@ -60,8 +67,9 @@ export function agregarAlCarrito(items, producto) {
     cantidad: existente ? existente.cantidad + 1 : 1,
     ...(producto.stockDisponible!==undefined?{stockDisponible:producto.stockDisponible}:{}),
   }
+  const actualizado = existente?.adicionales?.length ? personalizarItem(nuevoItem,producto,existente.adicionales.map(a=>a.id)) : nuevoItem
   const siguientes = existente
-    ? items.map((item) => (item.id === producto.id ? nuevoItem : item))
+    ? items.map((item) => (item.id === producto.id ? actualizado : item))
     : [...items, nuevoItem]
   calcularSubtotalCentavos(siguientes)
   return siguientes

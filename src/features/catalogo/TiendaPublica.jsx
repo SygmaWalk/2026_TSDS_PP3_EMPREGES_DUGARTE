@@ -6,7 +6,7 @@ import CatalogoPreview from '../productos/CatalogoPreview.jsx'
 import Carrito from '../carrito/Carrito.jsx'
 import { cargarTienda } from './catalogoRepository.js'
 import { claveCarritoInvitado, recuperarCarrito, guardarCarrito } from '../carrito/carritoStorage.js'
-import { agregarAlCarrito, cambiarCantidad, quitarDelCarrito, calcularSubtotalCentavos, formatearCentavos } from '../carrito/carrito.js'
+import { agregarAlCarrito, personalizarItem, cambiarCantidad, quitarDelCarrito, calcularSubtotalCentavos, formatearCentavos } from '../carrito/carrito.js'
 
 export default function TiendaPublica({ client, pedidoClient = client, identidad = 'invitado', slug, perfil, usuario }) {
   const clave = claveConfirmacion(slug, identidad)
@@ -45,6 +45,15 @@ export default function TiendaPublica({ client, pedidoClient = client, identidad
     window.addEventListener('focus', cargar)
     return () => { vigente = false; window.removeEventListener('focus', cargar) }
   }, [client, slug, intento, clave])
+  // Renueva promociones de una pestaña abierta y revalida al vencer la más próxima.
+  useEffect(() => {
+    if (vista === 'confirmar' || !estado.negocio || leerConfirmacion(clave)) return
+    const ahora = Date.now()
+    const vencimientos = estado.productos.filter(p=>p.promocion).map(p=>Date.parse(p.promocion.fin)-ahora)
+    const demora = Math.max(1000,Math.min(60000,...vencimientos))
+    const timer = window.setTimeout(()=>setIntento(n=>n+1),demora)
+    return () => window.clearTimeout(timer)
+  },[vista,estado.negocio,estado.productos,clave])
   function cambiar(operacion, texto) {
     try {
       const items = operacion(estado.items)
@@ -68,7 +77,7 @@ export default function TiendaPublica({ client, pedidoClient = client, identidad
               {confirmando&&!usuario&&leerConfirmacion(clave)?.estado!=='confirmado'?<section className="panel checkout-panel"><h2>Ingresá para confirmar tu pedido</h2><p>Tu carrito está guardado. Iniciá sesión o creá una cuenta de cliente para continuar.</p><div className="form-actions"><a className="button button-primary" href="#/ingresar" onClick={recordarTienda}>Iniciar sesión</a><a className="button button-secondary" href="#/registro" onClick={recordarTienda}>Crear cuenta</a><button className="button button-secondary" onClick={()=>setVista('carrito')}>Volver al carrito</button></div></section>:confirmando ? <ConfirmarPedido perfil={perfil} key={clave} clave={clave} client={pedidoClient} negocio={estado.negocio} items={estado.items}
                 onConfirmado={() => { const aviso = guardarCarrito(claveCarritoInvitado(estado.negocio.id), []); setEstado(actual => ({...actual,items:[],aviso})); setMensaje(''); return aviso }}
                 onVolver={destino => { setVista(destino); setIntento(actual=>actual+1); setMensaje('') }} /> : vista === 'catalogo' ? <div className="store-catalog-layout"><CatalogoPreview presentacion={estado.negocio?.apariencia?.presentacion} ordenProductos={estado.negocio?.apariencia?.ordenProductos} client={client} publico productos={estado.productos} onAgregar={producto => cambiar(items => agregarAlCarrito(items, producto), 'Se agregó “' + producto.nombre + '” al carrito.')} /><aside className="store-cart-summary"><span className="eyebrow">TU SELECCIÓN</span><h2>Tu carrito</h2><p>{unidades ? unidades + ' unidades seleccionadas' : 'Todavía no agregaste productos.'}</p><strong>{formatearCentavos(calcularSubtotalCentavos(estado.items))}</strong><button className="button button-primary" onClick={() => setVista('carrito')}>Ver carrito</button><small>Tu selección se conserva en este navegador. Para confirmar el pedido necesitás una cuenta de cliente.</small></aside></div> :
-                <Carrito onConfirmar={() => { setVista('confirmar'); setMensaje('') }} items={estado.items} onCantidad={(id, cantidad) => cambiar(items => cambiarCantidad(items, id, cantidad), 'Cantidad actualizada.')} onQuitar={id => cambiar(items => quitarDelCarrito(items, id), 'Producto retirado del carrito.')} onVolver={() => setVista('catalogo')} />}
+                <Carrito productos={estado.productos} onAdicionales={(id,seleccion)=>cambiar(items=>items.map(i=>i.id===id ? personalizarItem(i,estado.productos.find(p=>p.id===id),seleccion) : i),'Adicionales actualizados.')} onConfirmar={() => { setVista('confirmar'); setMensaje('') }} items={estado.items} onCantidad={(id, cantidad) => cambiar(items => cambiarCantidad(items, id, cantidad), 'Cantidad actualizada.')} onQuitar={id => cambiar(items => quitarDelCarrito(items, id), 'Producto retirado del carrito.')} onVolver={() => setVista('catalogo')} />}
             </div>
           </>}
   </PlantillaTienda>

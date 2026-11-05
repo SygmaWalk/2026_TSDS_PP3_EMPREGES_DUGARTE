@@ -32,6 +32,8 @@ function CatalogoPreview({ productos, onAgregar, client, publico = false, presen
               <strong>{producto.nombre}</strong>
               {producto.descripcion && <p>{producto.descripcion}</p>}
               <span>{formateadorPrecio.format(producto.precio)}</span>
+              {producto.promocion && <small>{producto.promocion.nombre} · {producto.promocion.porcentaje}% de descuento</small>}
+              {producto.adicionales?.length > 0 && <small>Personalizá los adicionales en el carrito.</small>}
               {onAgregar && (
                 <button
                   className="button button-primary"

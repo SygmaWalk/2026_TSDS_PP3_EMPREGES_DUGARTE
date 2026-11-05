@@ -108,7 +108,7 @@ export function DetallePedido({repository,id,version,puedeGestionar,puedeRegistr
       </section>}
       {mensaje&&<p className="feedback" role="status">{mensaje}</p>}{falloCambio&&<p className="error-feedback" role="alert">{falloCambio}</p>}
       <dl className="order-contact"><div><dt>Cliente</dt><dd>{p.nombre_contacto}</dd></div><div><dt>Teléfono</dt><dd>{p.telefono_contacto}</dd></div><div><dt>Último cambio de estado</dt><dd>{fecha(p.fecha_estado??p.fecha_creacion)}</dd></div></dl>
-      <h3>Productos del pedido</h3><ul className="order-lines">{p.detalles_pedido.map(d=><li key={d.producto_id}><span><strong>{d.cantidad} × {d.nombre_producto}</strong><small>{importe(d.precio_unitario)} por unidad</small></span><strong>{importe(d.precio_unitario*d.cantidad)}</strong></li>)}</ul>
+      <h3>Productos del pedido</h3><ul className="order-lines">{p.detalles_pedido.map(d=><li key={d.producto_id}><span><strong>{d.cantidad} × {d.nombre_producto}</strong><small>{importe(d.precio_unitario)} por unidad</small>{d.promocion && <small>Promoción: {d.promocion.nombre} ({d.promocion.porcentaje}%)</small>}{d.adicionales?.map(a=><small key={a.id}>{a.nombre} (+{importe(a.centavos/100)} por unidad)</small>)}</span><strong>{importe(d.precio_unitario*d.cantidad)}</strong></li>)}</ul>
       <div className="cart-summary"><span>Subtotal de productos</span><strong>{importe(p.subtotal)}</strong></div>
       <ResumenEntrega entrega={p.entrega} costo={Math.round(Number(p.costo_envio??0)*100)} total={Math.round(Number(p.total??p.subtotal)*100)}/>
       {!(puedeGestionar&&siguienteEstado(p.estado,p.entrega)==='Entregado'&&p.estado_pago!=='Pagado')&&<PagoPedido pedido={p} puedeRegistrar={puedeRegistrarPago} repository={repository} onActualizar={onActualizar}/>}

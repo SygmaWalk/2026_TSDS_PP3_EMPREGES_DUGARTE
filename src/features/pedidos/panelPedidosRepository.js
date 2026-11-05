@@ -48,7 +48,7 @@ export function crearPanelPedidosRepository(client, negocioId, usuarioId) {
     async detalle(id, clienteId = null) {
       await autorizar()
       try {
-        let q=client.from('pedidos').select((clienteId !== null ? 'clientes_comerciales!inner(id),' : '') + 'id,nombre_contacto,telefono_contacto,subtotal,entrega,costo_envio,total,estado,estado_pago,pago_efectivo,pago_transferencia,metodo_pago_previsto,metodo_pago,fecha_pago,version_pago,motivo_cancelacion,fecha_estado,fecha_creacion,stock_descontado,consumos_stock_pedido(producto_id,nombre_producto,cantidad,cantidad_devuelta),detalles_pedido(producto_id,nombre_producto,precio_unitario,cantidad),historial_estados_pedido(id,estado_anterior,estado_nuevo,fecha)')
+        let q=client.from('pedidos').select((clienteId !== null ? 'clientes_comerciales!inner(id),' : '') + 'id,nombre_contacto,telefono_contacto,subtotal,entrega,costo_envio,total,estado,estado_pago,pago_efectivo,pago_transferencia,metodo_pago_previsto,metodo_pago,fecha_pago,version_pago,motivo_cancelacion,fecha_estado,fecha_creacion,stock_descontado,consumos_stock_pedido(producto_id,nombre_producto,cantidad,cantidad_devuelta),detalles_pedido(producto_id,nombre_producto,precio_unitario,cantidad,adicionales,promocion),historial_estados_pedido(id,estado_anterior,estado_nuevo,fecha)')
           .eq('emprendimiento_id',negocioId).eq('id',id)
         if (clienteId !== null) q=q.eq('cliente_comercial_id',clienteId)
         const {data,error}=await q.maybeSingle()

@@ -1,3 +1,4 @@
+import ReglasCatalogo from './ReglasCatalogo.jsx'
 import {useState,useRef,useEffect} from 'react'
 import ProductoForm from './ProductoForm.jsx'
 import ProductoList from './ProductoList.jsx'
@@ -20,6 +21,7 @@ function ConfirmacionRetiro({decision,guardando,error,onConfirmar,onCerrar}){
 export default function ProductosPanel({repository,productosIniciales,negocio,client}){
  const [productos,setProductos]=useState(productosIniciales),[edicion,setEdicion]=useState(null),[abierto,setAbierto]=useState(false),[guardando,setGuardando]=useState(false),[error,setError]=useState(''),[mensaje,setMensaje]=useState(''),[busqueda,setBusqueda]=useState('')
  const [archivados,setArchivados]=useState(false),[decision,setDecision]=useState(null),[errorRetiro,setErrorRetiro]=useState('')
+ const [reglas,setReglas]=useState(false)
  const ocupado=useRef(false)
  const puede=p=>negocio.permisos.includes(p)
  const puedeRetirar=puede('productos.editar')&&puede('productos.publicar')
@@ -57,6 +59,7 @@ export default function ProductosPanel({repository,productosIniciales,negocio,cl
  return <main className="app-shell"><header className="app-header"><div><h1>Productos</h1><p>{productos.length} {archivados?'archivados':'productos'}{!archivados&&' · '+productos.filter(p=>p.visible).length+' publicados'}</p></div>{!abierto&&!archivados&&puede('productos.crear')&&<button className="button button-primary" disabled={guardando} onClick={()=>{setEdicion(null);setAbierto(true);setMensaje('')}}>Nuevo producto</button>}</header>
  {error&&<p role="alert" className="error-feedback">{error}</p>}{mensaje&&<p role="status" className="feedback">{mensaje}</p>}
  {abierto?<div><button className="button button-secondary" disabled={guardando} onClick={cerrar}>Volver a productos</button><ProductoForm key={edicion?.id??'nuevo'} producto={edicion} productosExistentes={productos} client={client} guardando={guardando} onGuardar={guardar} onCancelar={cerrar}/></div>:<>
+ {!archivados && puede('productos.editar') && <><button className="button" aria-expanded={reglas} onClick={()=>setReglas(!reglas)}>Configurar adicionales y promociones</button>{reglas && <ReglasCatalogo client={client} negocio={negocio} productos={productos}/>}</>}
  <div className="product-list-tools"><div className="field-group product-search"><label htmlFor="buscar-producto">Buscar producto</label><input id="buscar-producto" type="search" value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Nombre del producto"/></div>
  <div className="field-group"><label htmlFor="estado-productos">Mostrar</label><select id="estado-productos" disabled={guardando} value={archivados?'archivados':'actuales'} onChange={e=>cambiarListado(e.target.value==='archivados')}><option value="actuales">Productos actuales</option><option value="archivados">Archivados</option></select></div></div>
  <ProductoList client={client} productos={productos.filter(p=>p.nombre.toLocaleLowerCase().includes(busqueda.toLocaleLowerCase()))} guardando={guardando} archivados={archivados} puedeEditar={puede('productos.editar')} puedePublicar={puede('productos.publicar')} onEditar={p=>{setEdicion(p);setAbierto(true);setMensaje('')}} onCambiarVisibilidad={visibilidad} onRetirar={puedeRetirar?revisarRetiro:undefined} onRestaurar={puedeRetirar?revisarRetiro:undefined}/>

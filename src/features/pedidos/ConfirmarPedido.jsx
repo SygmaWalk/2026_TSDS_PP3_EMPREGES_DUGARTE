@@ -15,7 +15,7 @@ export default function ConfirmarPedido({ client, negocio, items, clave, perfil,
   const enviando = useRef(false)
   const recibo = registro?.estado === 'confirmado' ? registro.recibo : null
   const intento = registro?.estado === 'pendiente' ? registro.intento : null
-  const resumen = intento ? (registro.resumen ?? intento.p_items) : items.map(i => ({ producto_id:i.id, nombre:i.nombre, cantidad:i.cantidad, precio_centavos:i.precioCentavos }))
+  const resumen = intento ? (registro.resumen ?? intento.p_items) : items.map(i => ({ producto_id:i.id, nombre:i.nombre, cantidad:i.cantidad, precio_centavos:i.precioCentavos, adicionales:i.adicionales }))
   async function enviar(event) {
     event.preventDefault()
     if (enviando.current || !client) return
@@ -30,7 +30,7 @@ export default function ConfirmarPedido({ client, negocio, items, clave, perfil,
         if(entrega.modalidad==='envio' && !entrega.cotizacion) throw Object.assign(new Error('Calculá el envío y revisá el total antes de confirmar.'),{definitivo:true})
         contacto.entrega = entrega.modalidad==='retiro' ? {modalidad:'retiro'} : {modalidad:'envio',direccion:entrega.direccion.trim(),referencia:entrega.referencia.trim(),...entrega.punto,costo_centavos:entrega.cotizacion.costo_centavos,version:entrega.cotizacion.version}
         solicitud = { p_clave:crypto.randomUUID(), p_negocio:negocio.id, p_contacto:contacto,
-          p_items:items.map(i => ({producto_id:i.id,cantidad:i.cantidad,precio_centavos:i.precioCentavos})) }
+          p_items:items.map(i => ({producto_id:i.id,cantidad:i.cantidad,precio_centavos:i.precioCentavos,...(i.adicionales?.length ? {adicionales:i.adicionales.map(a=>a.id)} : {})})) }
         const pendiente = { estado:'pendiente', intento:solicitud, negocio, resumen }
         guardarConfirmacion(clave,pendiente)
         setRegistro(pendiente)
@@ -65,7 +65,7 @@ export default function ConfirmarPedido({ client, negocio, items, clave, perfil,
     <p>El emprendimiento tiene tus datos de contacto para coordinar el pedido. Todavía no fue aceptado ni pagado.</p>
     <p>Método elegido: <strong>{recibo.metodo_pago_previsto||'Sin registrar'}</strong></p>
     <p>Fecha: <time dateTime={recibo.fecha}>{new Date(recibo.fecha).toLocaleString('es-AR')}</time></p>
-    <ul className="order-lines">{recibo.items.map(i => <li key={i.producto_id}><span>{i.cantidad} × {i.nombre}</span><strong>{formatearCentavos(i.precio_centavos*i.cantidad)}</strong></li>)}</ul>
+    <ul className="order-lines">{recibo.items.map(i => <li key={i.producto_id}><span>{i.cantidad} × {i.nombre}{i.adicionales?.length ? ' · '+i.adicionales.map(a=>a.nombre).join(', ') : ''}</span><strong>{formatearCentavos(i.precio_centavos*i.cantidad)}</strong></li>)}</ul>
     <div className="cart-summary"><span>Subtotal registrado</span><strong>{formatearCentavos(recibo.subtotal_centavos)}</strong></div>
     <ResumenEntrega entrega={recibo.entrega} costo={recibo.costo_envio_centavos} total={recibo.total_centavos??recibo.subtotal_centavos}/><p className="field-help">Guardá el número del pedido. No se realizó ningún cobro; el pago se coordina con el emprendimiento.</p>
     {error && <p role="alert" className="error-feedback">{error}</p>}
@@ -74,7 +74,7 @@ export default function ConfirmarPedido({ client, negocio, items, clave, perfil,
   return <section className="panel checkout-panel" aria-labelledby="checkout-title">
     <span className="eyebrow">UN ÚLTIMO PASO</span><h2 id="checkout-title">Confirmar tu pedido</h2>
     <p>Revisá tu selección y dejá un contacto para {negocio.nombre}.</p>
-    <ul className="order-lines">{resumen.map(i => <li key={i.producto_id}><span>{i.cantidad} × {i.nombre ?? items.find(x => x.id===i.producto_id)?.nombre ?? 'Producto #' + i.producto_id}</span><strong>{formatearCentavos(i.precio_centavos*i.cantidad)}</strong></li>)}</ul>
+    <ul className="order-lines">{resumen.map(i => <li key={i.producto_id}><span>{i.cantidad} × {i.nombre ?? items.find(x => x.id===i.producto_id)?.nombre ?? 'Producto #' + i.producto_id}{i.adicionales?.length ? ' · '+i.adicionales.map(a=>a.nombre).join(', ') : ''}</span><strong>{formatearCentavos(i.precio_centavos*i.cantidad)}</strong></li>)}</ul>
     <div className="cart-summary"><span>Subtotal</span><strong>{formatearCentavos(intento ? resumen.reduce((s,i)=>s+i.precio_centavos*i.cantidad,0) : calcularSubtotalCentavos(items))}</strong></div>
     <p className="field-help">No se realiza ningún cobro. El pago se coordina con el emprendimiento.</p>
     {intento && <p role="status">Hay una confirmación pendiente de respuesta. Reintentá con estos mismos datos para conocer el resultado.</p>}

@@ -12,5 +12,8 @@ export async function cargarTienda(client, slug) {
   const productos = await crearProductosRepository(client, negocio.id).listar({ soloVisibles: true })
   const disponibilidad=await client.rpc('catalogo_disponibilidad',{p_negocio:negocio.id})
   if(disponibilidad.error)throw Error('No se pudo comprobar la disponibilidad. Actualizá la tienda.')
-  return { negocio, productos:productos.map(p=>({...p,stockDisponible:disponibilidad.data.find(d=>d.producto_id===p.id)?.disponible??0})) }
+  const opciones = await client.rpc('opciones_catalogo',{p_negocio:negocio.id})
+  if (opciones.error) throw Error('No se pudieron consultar los precios de esta tienda.')
+  const porProducto = new Map(opciones.data.map(op => [op.producto_id,op]))
+  return { negocio, productos:productos.filter(p => porProducto.has(p.id)).map(p=>({...p, precio:porProducto.get(p.id).precio_centavos / 100, promocion:porProducto.get(p.id).promocion, adicionales:porProducto.get(p.id).adicionales, stockDisponible:disponibilidad.data.find(d=>d.producto_id===p.id)?.disponible??0})) }
 }

@@ -32,7 +32,7 @@ function CantidadItem({ item, onCantidad }) {
   )
 }
 
-export default function Carrito({ items, onCantidad, onQuitar, onVolver, onConfirmar }) {
+export default function Carrito({ items, onCantidad, onQuitar, onVolver, onConfirmar, productos = [], onAdicionales }) {
   return (
     <section className="panel cart-panel" aria-labelledby="cart-title">
       <div className="panel-heading">
@@ -50,6 +50,15 @@ export default function Carrito({ items, onCantidad, onQuitar, onVolver, onConfi
               <div>
                 <h3>{item.nombre}</h3>
                 <p>{formatearCentavos(item.precioCentavos)} por unidad</p>
+                {onAdicionales && productos.find(p=>p.id===item.id)?.adicionales?.length > 0 && <fieldset>
+                  <legend>Adicionales por unidad de {item.nombre}</legend>
+                  {productos.find(p=>p.id===item.id).adicionales.map(a=>{
+                    const seleccion = (item.adicionales ?? []).map(extra=>extra.id)
+                    return <label key={a.id}><input type="checkbox" checked={seleccion.includes(a.id)}
+                      onChange={e=>onAdicionales(item.id,e.target.checked ? [...seleccion,a.id] : seleccion.filter(id=>id!==a.id))}/>
+                      {a.nombre} (+{formatearCentavos(a.centavos)})</label>
+                  })}
+                </fieldset>}
                 <CantidadItem
                   key={`${item.id}:${item.cantidad}`}
                   item={item}
