@@ -15,7 +15,7 @@ const publicClient = () => createClient(status.API_URL,key,opts)
 const slug = 'qa-catalogo-' + randomUUID()
 const users = []
 const read = res => { assert.ifError(res.error); return res.data }
-let server, browser, id
+let server, browser, id, otroId
 try {
   process.env.VITE_SUPABASE_URL=status.API_URL
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY=key
@@ -109,6 +109,44 @@ try {
   assert.equal(historial.detalles_pedido[0].adicionales[0].centavos,12500)
   assert.equal(historial.detalles_pedido[0].adicionales[0].nombre,'Queso QA')
   assert.equal(historial.detalles_pedido[0].promocion.nombre,'Descuento QA')
+  await page.goto(url+'#/panel/'+id+'/productos')
+  await page.getByRole('button',{name:'Editar Pizza QA',exact:true}).click()
+  await page.locator('#nombre').fill('Pizza QA actualizada')
+  await page.locator('#precio').fill('1500')
+  await page.getByRole('button',{name:'Guardar cambios',exact:true}).click()
+  await page.getByRole('button',{name:'Ocultar Pizza QA actualizada en el catálogo público',exact:true}).click()
+  await page.getByRole('button',{name:'Mostrar Pizza QA actualizada en el catálogo público',exact:true}).waitFor()
+  assert.equal(read(await publicClient().from('productos').select('id').eq('id',p.id)).length,0)
+  await page.getByRole('button',{name:'Mostrar Pizza QA actualizada en el catálogo público',exact:true}).click()
+  await page.getByRole('button',{name:'Ocultar Pizza QA actualizada en el catálogo público',exact:true}).waitFor()
+  assert.equal(read(await publicClient().from('productos').select('precio').eq('id',p.id).single()).precio,1500)
+  await page.goto(url+'#/panel/'+id+'/clientes')
+  await page.getByRole('button',{name:'Ver ficha de Cliente QA',exact:true}).click()
+  await page.getByRole('button',{name:'Editar datos del cliente',exact:true}).click()
+  await page.getByLabel('Dirección de contacto',{exact:true}).fill('Domicilio nuevo de prueba')
+  await page.getByRole('button',{name:'Guardar datos del cliente',exact:true}).click()
+  await page.getByText('Datos del cliente actualizados.',{exact:true}).waitFor()
+  assert.equal(read(await service.from('clientes_comerciales').select('direccion').eq('emprendimiento_id',id).single()).direccion,'Domicilio nuevo de prueba')
+  const copia=read(await service.from('pedidos').select('nombre_contacto,subtotal,detalles_pedido(nombre_producto,precio_unitario)').eq('emprendimiento_id',id).single())
+  assert.equal(copia.nombre_contacto,'Cliente QA')
+  assert.equal(copia.subtotal,1025)
+  assert.equal(copia.detalles_pedido[0].nombre_producto,'Pizza QA')
+  assert.equal(copia.detalles_pedido[0].precio_unitario,1025)
+  otroId=read(await service.from('emprendimientos').insert({nombre:'Segundo negocio QA',slug:'otro-'+slug}).select('id').single()).id
+  await page.goto(url+'#/panel/'+otroId+'/productos')
+  await page.getByRole('button',{name:'Nuevo producto',exact:true}).click()
+  await page.locator('#nombre').fill('Producto del segundo negocio')
+  await page.locator('#precio').fill('300')
+  await page.getByRole('button',{name:'Crear producto',exact:true}).click()
+  await page.getByRole('button',{name:'Editar Producto del segundo negocio',exact:true}).waitFor()
+  assert.equal(await page.getByRole('button',{name:'Editar Pizza QA actualizada',exact:true}).count(),0)
+  assert.equal(read(await operador.from('productos').select('id').eq('emprendimiento_id',otroId)).length,0)
+  assert.equal((await operador.rpc('reglas_negocio',{p_negocio:otroId})).error?.code,'42501')
+  await page.goto(url+'#/panel/'+otroId+'/clientes')
+  await page.getByRole('heading',{name:'Todavía no hay clientes en esta página'}).waitFor()
+  assert.equal(await page.getByRole('button',{name:'Ver ficha de Cliente QA',exact:true}).count(),0)
+  await page.goto(url+'#/panel/'+id+'/clientes')
+  await page.getByRole('button',{name:'Ver ficha de Cliente QA',exact:true}).waitFor()
   console.log('PASS administración, permisos, configuración, descuento vigente, carrito, retorno con cuenta, compra, expiración, rechazo e historial.')
 } finally {
   await browser?.close()
@@ -117,5 +155,6 @@ try {
   if (id) for(const tabla of ['movimientos_stock','consumos_stock_pedido','pedidos','productos','emprendimientos']){
     read(await service.from(tabla).delete().eq(tabla==='emprendimientos'?'id':'emprendimiento_id',id))
   }
+  if(otroId) { read(await service.from('productos').delete().eq('emprendimiento_id',otroId)); read(await service.from('emprendimientos').delete().eq('id',otroId)) }
   for(const user of users) read(await service.auth.admin.deleteUser(user.id))
 }
