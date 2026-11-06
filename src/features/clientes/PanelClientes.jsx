@@ -1,3 +1,4 @@
+import FrecuenciaClientes from './FrecuenciaClientes.jsx'
 import {useRuta,leerRuta,navegar,rutaNegocio,useCambiosSinGuardar} from '../../navigation.js'
 import HistorialCliente from './HistorialCliente.jsx'
 import { useEffect,useMemo,useRef,useState } from 'react'
@@ -39,6 +40,7 @@ function Ficha({id,repository,puedeEditar,puedeVerPedidos,onVolver}) {
 }
 export default function PanelClientes({client,negocio,usuarioId,onVolver,repository:externo}) {
  const repository=useMemo(()=>externo??crearClientesRepository(client,negocio.id,usuarioId),[externo,client,negocio.id,usuarioId])
+ const [verFrecuencia,setVerFrecuencia]=useState(false)
  const [busqueda,setBusqueda]=useState(''),[consulta,setConsulta]=useState(''),[errorBusqueda,setErrorBusqueda]=useState('')
  const [pagina,setPagina]=useState(0),[version,setVersion]=useState(0),[seleccionLocal,setSeleccionLocal]=useState(null),[resultado,setResultado]=useState({cargando:true,clientes:[],total:0,error:''})
  const ruta=useRuta(),destino=leerRuta(ruta),seleccionado=destino?.seccion==='clientes'?destino.detalle:seleccionLocal
@@ -52,6 +54,8 @@ export default function PanelClientes({client,negocio,usuarioId,onVolver,reposit
   <header className="app-header"><div><h1>Clientes</h1><p>{negocio.nombre}</p></div></header>
 
   {seleccionado!==null?<Ficha key={seleccionado} id={seleccionado} repository={repository} puedeEditar={negocio.permisos.includes('clientes.editar')} puedeVerPedidos={negocio.permisos.includes('pedidos.ver')} onVolver={()=>{setSeleccionado(null);recargar()}}/>:<>
+   {negocio.permisos.includes('pedidos.ver') && <button className="button" aria-expanded={verFrecuencia} onClick={()=>setVerFrecuencia(!verFrecuencia)}>Clientes frecuentes</button>}
+   {verFrecuencia && negocio.permisos.includes('pedidos.ver') && <FrecuenciaClientes repository={repository} onFicha={setSeleccionado}/>}
    <form className="customer-search" onSubmit={buscar}>
     <div className="field-group"><label htmlFor="buscar-cliente">Buscar por nombre o teléfono</label><input id="buscar-cliente" type="search" maxLength={100} value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Ej.: Ana o 11 5555-6666"/></div>
     <button className="button button-primary" type="submit">Buscar clientes</button>
@@ -68,3 +72,4 @@ export default function PanelClientes({client,negocio,usuarioId,onVolver,reposit
   </>}
  </div></main>
 }
+

@@ -38,6 +38,13 @@ export function crearClientesRepository(client, negocio, usuario) {
       if (r.error) throw fallo(r.error)
       return { clientes: r.data, total: r.count }
     },
+    async frecuencia({ minimo = 3, desde = '', hasta = '', orden = 'pedidos', pagina = 0 } = {}) {
+      validarPagina(pagina)
+      await autorizar(true)
+      const r = await client.rpc('frecuencia_clientes', { p_negocio: negocio, p_minimo: minimo, p_desde: desde || null, p_hasta: hasta || null, p_orden: orden, p_pagina: pagina })
+      if (r.error) throw fallo(r.error)
+      return r.data
+    },
     async detalle(id) {
       await autorizar()
       const r = await client.from('clientes_comerciales').select('*').eq('emprendimiento_id', negocio).eq('id', id).maybeSingle()
@@ -67,3 +74,4 @@ export function crearClientesRepository(client, negocio, usuario) {
     },
   }
 }
+
