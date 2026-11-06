@@ -1,3 +1,4 @@
+import DireccionesCliente from './DireccionesCliente.jsx'
 import { useState } from 'react'
 import { leerPerfil, validarPerfil } from './perfil.js'
 
@@ -26,10 +27,11 @@ export default function PerfilCliente({ client, usuario }) {
         <div className="field-group"><label htmlFor="perfil-nombre">Nombre y apellido</label><input id="perfil-nombre" autoComplete="name" required minLength={2} maxLength={100} value={perfil.nombre} onChange={e => { setPerfil({ ...perfil, nombre: e.target.value }); setMensaje('') }} /></div>
         <div className="field-group"><label htmlFor="perfil-email">Correo de la cuenta</label><input id="perfil-email" type="email" value={usuario.email ?? ''} readOnly /><small>Es el correo con el que ingresás.</small></div>
         <div className="field-group"><label htmlFor="perfil-telefono">Teléfono</label><input id="perfil-telefono" type="tel" autoComplete="tel" maxLength={30} value={perfil.telefono} onChange={e => { setPerfil({ ...perfil, telefono: e.target.value }); setMensaje('') }} /><small>Opcional. Incluí el código de área.</small></div>
-        <div className="field-group"><label htmlFor="perfil-direccion">Dirección habitual</label><input id="perfil-direccion" autoComplete="street-address" maxLength={200} value={perfil.direccion} onChange={e => { setPerfil({ ...perfil, direccion: e.target.value }); setMensaje('') }} /><small>Opcional. En cada envío deberás revisar la dirección y marcar el punto en el mapa.</small></div>
+        <div className="field-group"><label htmlFor="perfil-direccion">Dirección habitual</label><input id="perfil-direccion" autoComplete="street-address" maxLength={200} value={perfil.direccion} onChange={e => { setPerfil({ ...perfil, direccion: e.target.value }); setMensaje('') }} /><small>Dato anterior opcional. Guardá tus destinos con su ubicación en Mis direcciones.</small></div>
         {error && <p role="alert" className="error-feedback">{error}</p>}{mensaje && <p role="status" className="feedback">{mensaje}</p>}
         <button className="button button-primary" type="submit">{guardando ? 'Guardando…' : 'Guardar perfil'}</button>
       </fieldset></form>
+      <DireccionesCliente client={client} key={usuario.id}/>
       <div className="session-explanation"><strong>Acerca de tu sesión</strong><p>Tu cuenta sigue abierta en este navegador aunque cierres la ventana o apagues el equipo. Usá “Cerrar sesión” cuando termines en un dispositivo compartido.</p></div>
     </div>
   </section>

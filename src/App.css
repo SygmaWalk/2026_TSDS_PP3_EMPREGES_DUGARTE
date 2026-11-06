@@ -1045,3 +1045,18 @@
 .order-detail-inline :is(h3,p){margin-block:8px}
 .order-detail-inline .order-lines{margin-block:8px}
 .order-detail-inline .cart-summary{padding-block:10px}
+
+/* Direcciones y zonas: textos largos y controles adaptables. */
+.saved-addresses { margin-top: 2rem; min-width: 0; }
+.address-list { list-style: none; padding: 0; display: grid; gap: 1rem; }
+.address-list li, .zone-card { padding: 1rem; border: 1px solid #cbd5d1; border-radius: 12px; min-width: 0; overflow-wrap: anywhere; }
+.zone-card { display: grid; gap: .8rem; margin: 1rem 0; }
+.zone-card label { display: grid; gap: .3rem; min-width: 0; }
+.zone-card input, .saved-addresses input { max-width: 100%; }
+.map-search { margin: .75rem 0; max-width: 100%; }
+
+.delivery-settings > .form-fields, .saved-addresses .form-fields { grid-template-columns: minmax(0, 1fr); }
+.delivery-settings > .form-fields > *, .saved-addresses .form-fields > * { grid-column: 1 / -1; }
+.delivery-settings select, .zone-card input, .saved-addresses input:not([type="checkbox"]) { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--border-strong); border-radius: 10px; padding: 11px 12px; color: var(--text); background: var(--surface); font: inherit; }
+.saved-addresses .form-fields > label { display: grid; gap: 7px; }
+.saved-addresses input[type="checkbox"] { width: auto; justify-self: start; }

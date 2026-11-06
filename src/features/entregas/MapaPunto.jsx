@@ -3,7 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { puntoValido } from './entregasRepository.js'
 
-export default function MapaPunto({punto,onChange,origen,radio,disabled=false,soloLectura=false}) {
+export default function MapaPunto({punto,onChange,origen,radio,zonas=[],disabled=false,soloLectura=false}) {
   const contenedor=useRef(null),mapa=useRef(null),marcas=useRef(null),callback=useRef(onChange),bloqueado=useRef(disabled)
   const [error,setError]=useState(''),[lat,setLat]=useState(''),[lng,setLng]=useState('')
   const id=useId()
@@ -21,6 +21,7 @@ export default function MapaPunto({punto,onChange,origen,radio,disabled=false,so
     const m=mapa.current
     if(!m)return
     marcas.current.clearLayers()
+    zonas.forEach(z=>{if([z.sur,z.norte,z.oeste,z.este].every(Number.isFinite))L.rectangle([[z.sur,z.oeste],[z.norte,z.este]],{color:'#235f58',weight:2,fillOpacity:0.12,interactive:false}).addTo(marcas.current)})
     if(puntoValido(origen)) {
       L.circleMarker([origen.latitud,origen.longitud],{radius:7,color:'#235f58'}).bindTooltip(soloLectura?'Origen':'Origen del emprendimiento',{permanent:soloLectura,direction:'top'}).addTo(marcas.current)
       if(radio)L.circle([origen.latitud,origen.longitud],{radius:radio,color:'#235f58',weight:1,fillOpacity:0.05}).addTo(marcas.current)
@@ -35,7 +36,7 @@ export default function MapaPunto({punto,onChange,origen,radio,disabled=false,so
     const observer=new ResizeObserver(()=>{m.invalidateSize();if(soloLectura)encuadrar()})
     observer.observe(contenedor.current)
     return()=>observer.disconnect()
-  },[punto,origen,radio,soloLectura])
+  },[punto,origen,radio,soloLectura,zonas])
   function ubicar(){
     const nuevo={latitud:Number(lat.replace(',','.')),longitud:Number(lng.replace(',','.'))}
     if(!lat.trim()||!lng.trim()||!puntoValido(nuevo)){setError('Ingresá una latitud entre −90 y 90 y una longitud entre −180 y 180.');return}

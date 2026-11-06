@@ -1,8 +1,10 @@
+import { prepararZonas } from './zonas.js'
 export function puntoValido(p) {
   return p && Number.isFinite(p.latitud) && Number.isFinite(p.longitud) && Math.abs(p.latitud)<=90 && Math.abs(p.longitud)<=180
 }
-export function prepararConfiguracion(negocioId,direccion,punto,filas) {
+export function prepararConfiguracion(negocioId,direccion,punto,filas,{modalidad='radio',zonas=[]}={}) {
   if(direccion.trim().length<5 || direccion.trim().length>200 || !puntoValido(punto)) throw new Error('Completá la dirección de origen y seleccioná un punto válido.')
+  if(modalidad==='zonas')return {emprendimiento_id:negocioId,direccion_origen:direccion.trim(),...punto,modalidad,franjas:[],zonas:prepararZonas(zonas)}
   if(!filas.length || filas.length>20) throw new Error('Definí entre 1 y 20 franjas.')
   let anterior=0
   const franjas=filas.map(f=>{
@@ -16,13 +18,13 @@ export function prepararConfiguracion(negocioId,direccion,punto,filas) {
   return {emprendimiento_id:negocioId,direccion_origen:direccion.trim(),...punto,franjas}
 }
 export async function cargarConfiguracion(client,id) {
-  const {data,error}=await client.from('configuracion_entregas').select('direccion_origen,latitud,longitud,franjas,version').eq('emprendimiento_id',id).maybeSingle()
+  const {data,error}=await client.from('configuracion_entregas').select('direccion_origen,latitud,longitud,franjas,version,modalidad,zonas').eq('emprendimiento_id',id).maybeSingle()
   if(error)throw new Error('No se pudo cargar la configuración de entregas. Intentá nuevamente.')
   return data
 }
 export async function guardarConfiguracion(client,datos) {
   const {data,error}=await client.from('configuracion_entregas').upsert(datos).select().single()
-  if(error)throw new Error('No se pudo guardar. Comprobá tu conexión y tu permiso para configurar entregas.')
+  if(error)throw new Error(error.code==='23514'?'Revisá las zonas: límites válidos, sin superposiciones y con tarifas válidas.':'No se pudo guardar. Comprobá tu conexión y tu permiso para configurar entregas.')
   return data
 }
 export async function cotizarEntrega(client,id,punto) {

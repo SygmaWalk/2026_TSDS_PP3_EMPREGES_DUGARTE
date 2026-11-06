@@ -1,27 +1,31 @@
+import EditorZonas from './EditorZonas.jsx'
 import {useCambiosSinGuardar} from '../../navigation.js'
 import { useEffect,useState } from 'react'
 import MapaPunto from './MapaPuntoLazy.jsx'
 import { cargarConfiguracion,guardarConfiguracion,prepararConfiguracion } from './entregasRepository.js'
 
 function Formulario({client,negocio,inicial}) {
+  const [modalidad,setModalidad]=useState(inicial?.modalidad??'radio')
+  const [zonas,setZonas]=useState(inicial?.zonas?.map(z=>({...z,precio:String(z.tarifa_centavos/100)}))??[])
   const [direccion,setDireccion]=useState(inicial?.direccion_origen??'')
   const [punto,setPunto]=useState(inicial?{latitud:Number(inicial.latitud),longitud:Number(inicial.longitud)}:null)
   const [filas,setFilas]=useState(inicial?.franjas.map(f=>({km:String(f.hasta_m/1000),precio:String(f.tarifa_centavos/100)}))??[{km:'',precio:''}])
   const [ocupado,setOcupado]=useState(false),[error,setError]=useState(''),[guardado,setGuardado]=useState(false)
-  const [original]=useState(()=>JSON.stringify({direccion,punto,filas}))
-  useCambiosSinGuardar(ocupado||(!guardado&&JSON.stringify({direccion,punto,filas})!==original))
+  const [original]=useState(()=>JSON.stringify({direccion,punto,filas,modalidad,zonas}))
+  useCambiosSinGuardar(ocupado||(!guardado&&JSON.stringify({direccion,punto,filas,modalidad,zonas})!==original))
   function editar(i,campo,valor){setFilas(filas.map((f,n)=>n===i?{...f,[campo]:valor}:f))}
   async function guardar(e){
     e.preventDefault();setError('');setGuardado(false)
-    try{const datos=prepararConfiguracion(negocio.id,direccion,punto,filas);setOcupado(true);await guardarConfiguracion(client,datos);setGuardado(true)}
+    try{const datos=prepararConfiguracion(negocio.id,direccion,punto,filas,{modalidad,zonas});datos.modalidad=modalidad;setOcupado(true);await guardarConfiguracion(client,datos);setGuardado(true)}
     catch(fallo){setError(fallo.message)}finally{setOcupado(false)}
   }
   return <form className="panel delivery-settings product-form" onSubmit={guardar} onChange={()=>setGuardado(false)}>
     <fieldset className="form-fields" disabled={ocupado}>
       <h2>Origen de los envíos</h2><p>Esta dirección y el punto de origen serán visibles en la tienda. Indicá el lugar desde el que salen tus entregas.</p>
       <div className="field-group"><label htmlFor="origen-direccion">Dirección de origen</label><input id="origen-direccion" value={direccion} onChange={e=>setDireccion(e.target.value)} required minLength={5} maxLength={200}/></div>
-      <MapaPunto punto={punto} onChange={p=>{setPunto(p);setGuardado(false)}} disabled={ocupado}/>
-      <h2>Cobertura y tarifas</h2><p>Distancia en línea recta desde el origen; no representa el recorrido por calles ni un tiempo de entrega.</p>
+      <MapaPunto punto={punto} onChange={p=>{setPunto(p);setGuardado(false)}} onDireccion={d=>{setDireccion(d.direccion);setPunto({latitud:d.latitud,longitud:d.longitud});setGuardado(false)}} disabled={ocupado}/>
+      <h2>Cobertura y tarifas</h2><label htmlFor="calculo-envio">Calcular envío por</label><select id="calculo-envio" value={modalidad} onChange={e=>setModalidad(e.target.value)}><option value="radio">Distancia desde el origen (radio)</option><option value="zonas">Zonas rectangulares</option></select>
+      {modalidad==='zonas'?<EditorZonas zonas={zonas} onChange={z=>{setZonas(z);setGuardado(false)}} origen={punto} disabled={ocupado}/>:<><p>Distancia en línea recta desde el origen; no representa el recorrido por calles ni un tiempo de entrega.</p>
       {filas.map((f,i)=><div className="delivery-band" key={i}>
         <p><strong>Franja {i+1}</strong><small>{i===0?'Desde 0 km':'Más de '+(filas[i-1].km||'…')+' km'}</small></p>
         <label>Hasta (km)<input aria-label={'Límite en km de franja '+(i+1)} inputMode="decimal" value={f.km} onChange={e=>editar(i,'km',e.target.value)} required/></label>
@@ -29,7 +33,7 @@ function Formulario({client,negocio,inicial}) {
         <button type="button" className="button button-secondary" disabled={filas.length===1} onClick={()=>{setFilas(filas.filter((_,n)=>n!==i));setGuardado(false)}} aria-label={'Quitar franja '+(i+1)}>Quitar</button>
       </div>)}
       <button type="button" className="button button-secondary" disabled={filas.length>=20} onClick={()=>{setFilas([...filas,{km:'',precio:''}]);setGuardado(false)}}>Agregar franja</button>
-      <p className="field-help">El límite superior pertenece a esa franja. La última define la cobertura máxima (hasta 100 km). Una tarifa de $0 es válida.</p>
+      <p className="field-help">El límite superior pertenece a esa franja. La última define la cobertura máxima (hasta 100 km). Una tarifa de $0 es válida.</p></>}
     </fieldset>
     <p>Los cambios se aplican a nuevos pedidos. Los pedidos registrados conservan la dirección y la tarifa originales.</p>
     {error&&<p className="error-feedback" role="alert">{error}</p>}

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { expect, test, vi } from 'vitest'
 import PerfilCliente from './PerfilCliente.jsx'
 import { leerPerfil } from './perfil.js'
+vi.mock('./direccionesRepository.js',()=>({cargarDirecciones:vi.fn().mockResolvedValue([])}))
 const usuario = { id: 'cliente', email: 'cliente@example.test', user_metadata: { perfil_cliente: { nombre: 'Ana Pérez', telefono: '1123456789', direccion: 'Calle 123' } } }
 test('guarda solo datos de contacto propios y muestra confirmación del servidor', async () => {
   const updateUser = vi.fn().mockResolvedValue({ error: null })

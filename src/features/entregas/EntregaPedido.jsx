@@ -1,3 +1,4 @@
+import SelectorDireccion from '../cliente/SelectorDireccion.jsx'
 import { useEffect,useRef,useState } from 'react'
 import MapaPunto from './MapaPuntoLazy.jsx'
 import { cargarConfiguracion,cotizarEntrega } from './entregasRepository.js'
@@ -18,11 +19,12 @@ function Envio({client,negocio,valor,onChange,disabled}) {
   }
   const c=carga.config,origen=c?{latitud:Number(c.latitud),longitud:Number(c.longitud)}:null
   return <div className="delivery-form">
-    <div className="field-group"><label htmlFor="envio-direccion">Dirección de entrega</label><input id="envio-direccion" value={valor.direccion} onChange={e=>cambiar({direccion:e.target.value})} required minLength={5} maxLength={200} autoComplete="street-address"/></div>
+    <SelectorDireccion usarPredeterminada={!valor.punto&&valor.direccionId===undefined} client={client} seleccion={valor.direccionId} disabled={disabled} onSeleccion={d=>cambiar(d?{direccionId:d.id,direccion:d.direccion,referencia:d.referencia,punto:{latitud:Number(d.latitud),longitud:Number(d.longitud)}}:{direccionId:'',direccion:'',referencia:'',punto:null})}/>
+    <div className="field-group"><label htmlFor="envio-direccion">Dirección de entrega</label><input id="envio-direccion" value={valor.direccion} onChange={e=>cambiar({direccion:e.target.value,direccionId:''})} required minLength={5} maxLength={200} autoComplete="street-address"/></div>
     <div className="field-group"><label htmlFor="envio-referencia">Referencia (opcional)</label><input id="envio-referencia" value={valor.referencia} onChange={e=>cambiar({referencia:e.target.value})} maxLength={300}/></div>
     {carga.cargando?<p role="status">Consultando cobertura…</p>:carga.error?<><p role="alert">{carga.error}</p><button className="button" type="button" onClick={()=>{setCarga({cargando:true});setReintento(v=>v+1)}}>Reintentar cobertura</button></>:!c?<p role="alert">El emprendimiento todavía no configuró sus entregas. Elegí retiro o consultá al negocio.</p>:<>
-      <p className="field-help">Envíos desde {c.direccion_origen}. Cobertura hasta {c.franjas.at(-1).hasta_m/1000} km en línea recta.</p>
-      <MapaPunto punto={valor.punto} onChange={punto=>cambiar({punto})} origen={origen} radio={c.franjas.at(-1).hasta_m} disabled={disabled}/>
+      <p className="field-help">Envíos desde {c.direccion_origen}. {c.modalidad==='zonas'?'Tarifa según la zona del destino.':'Cobertura hasta '+c.franjas.at(-1).hasta_m/1000+' km en línea recta.'}</p>
+      <MapaPunto punto={valor.punto} onChange={punto=>cambiar({punto,direccionId:''})} origen={origen} radio={c.modalidad==='zonas'?null:c.franjas.at(-1).hasta_m} zonas={c.modalidad==='zonas'?c.zonas:[]} onDireccion={d=>cambiar({direccion:d.direccion,punto:{latitud:d.latitud,longitud:d.longitud},direccionId:''})} disabled={disabled}/>
       <button className="button button-secondary" type="button" disabled={disabled||ocupado||!valor.punto||valor.direccion.trim().length<5} onClick={calcular}>{ocupado?'Calculando…':'Calcular envío'}</button>
     </>}
     {error&&<p role="alert" className="error-feedback">{error}</p>}

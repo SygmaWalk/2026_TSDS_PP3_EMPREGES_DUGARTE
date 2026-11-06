@@ -4,6 +4,7 @@ import { expect,test,vi,beforeEach } from 'vitest'
 import { prepararConfiguracion } from './entregasRepository.js'
 import ConfirmarPedido from '../pedidos/ConfirmarPedido.jsx'
 vi.mock('./MapaPuntoLazy.jsx',()=>({default:({onChange})=><button type="button" onClick={()=>onChange({latitud:0,longitud:0.001})}>Marcar punto de prueba</button>}))
+vi.mock('../cliente/direccionesRepository.js',()=>({cargarDirecciones:vi.fn().mockResolvedValue([])}))
 const config={direccion_origen:'Origen de prueba',latitud:0,longitud:0,franjas:[{hasta_m:1000,tarifa_centavos:20000}]}
 const quote={costo_centavos:20000,version:'version-1',franja:'Franja 1',distancia_m:111.2}
 beforeEach(()=>sessionStorage.clear())
