@@ -51,10 +51,10 @@ test('eventos nuevos se deduplican; actualización y reconexión no son pedidos 
 test('una alerta conserva filtros y el detalle seleccionado',async()=>{
  const repo=base();let evento;repo.suscribir=e=>{evento=e;return vi.fn()};montar(repo)
  await userEvent.click(await screen.findByRole('button',{name:'Ver pedido #10'}))
- await screen.findByRole('heading',{name:'Pedido #10'})
+ await screen.findByRole('region',{name:'Detalle del pedido #10'})
  act(()=>evento({tipo:'INSERT',id:12}))
  await waitFor(()=>expect(repo.detalle.mock.calls.length).toBeGreaterThan(1))
- expect(screen.getByRole('heading',{name:'Pedido #10'})).toBeVisible()
+ expect(screen.getByRole('region',{name:'Detalle del pedido #10'})).toBeVisible()
  expect(screen.getByText('Llegó un pedido nuevo')).toBeVisible()
 })
 test('sonido requiere activación, permite silenciar y libera el contexto',async()=>{

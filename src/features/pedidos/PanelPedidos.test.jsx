@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, test, vi } from 'vitest'
 import PanelPedidos from './PanelPedidos.jsx'
@@ -56,5 +56,24 @@ test('detalle retirado no deja visible información anterior',async()=>{
  montar({listar:vi.fn().mockResolvedValue({pedidos:[pedido],total:1}),detalle:vi.fn().mockResolvedValue(null)})
  await userEvent.click(await screen.findByRole('button',{name:'Ver pedido #10'}))
  expect(await screen.findByRole('alert')).toHaveTextContent('no está disponible')
- expect(screen.queryByText('Cliente QA')).not.toBeInTheDocument()
+ expect(within(screen.getByRole('region',{name:'Detalle del pedido #10'})).queryByText('Cliente QA')).not.toBeInTheDocument()
+})
+
+test('despliega en la misma lista, conserva la ruta y abre un solo pedido por vez',async()=>{
+ const segundo={...pedido,id:11,nombre_contacto:'Otro cliente'}
+ const repo={listar:vi.fn().mockResolvedValue({pedidos:[pedido,segundo],total:2}),detalle:vi.fn().mockImplementation(async id=>({...pedido,id,detalles_pedido:[]}))}
+ montar(repo)
+ const ruta=window.location.hash
+ await userEvent.click(await screen.findByRole('button',{name:'Ver pedido #10'}))
+ expect(await screen.findByRole('region',{name:'Detalle del pedido #10'})).toBeVisible()
+ expect(screen.getByRole('button',{name:'Cerrar pedido #10'})).toHaveAttribute('aria-expanded','true')
+ expect(screen.getByRole('button',{name:'Ver pedido #11'})).toBeVisible()
+ expect(screen.getByLabelText('Estado')).toBeVisible()
+ expect(window.location.hash).toBe(ruta)
+ await userEvent.click(screen.getByRole('button',{name:'Ver pedido #11'}))
+ expect(await screen.findByRole('region',{name:'Detalle del pedido #11'})).toBeVisible()
+ expect(screen.queryByRole('region',{name:'Detalle del pedido #10'})).not.toBeInTheDocument()
+ await userEvent.click(screen.getByRole('button',{name:'Cerrar pedido #11'}))
+ expect(screen.queryByRole('region',{name:'Detalle del pedido #11'})).not.toBeInTheDocument()
+ expect(screen.getByRole('button',{name:'Ver pedido #11'})).toHaveAttribute('aria-expanded','false')
 })

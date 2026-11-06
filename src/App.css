@@ -1030,3 +1030,18 @@
 .catalog-store .preview-grid:not(.preview-list)>li{display:flex;flex-direction:column;min-width:0}
 .catalog-store .preview-grid:not(.preview-list)>li>.button{margin-top:auto}
 @media(max-width:600px){.catalog-rule-card{flex-wrap:wrap}.catalog-rule-card>div{flex:1 1 100%}.product-catalog-tools{padding:16px}.product-actions .button{white-space:normal}}
+/* Detalle desplegable: conserva la tarjeta y los filtros en su lugar. */
+.order-expanded{grid-column:1/-1;min-width:0;border-top:1px solid var(--border);padding-top:16px}
+.business-section .order-expanded .order-detail-inline,.order-detail-inline{max-width:none;margin:0;padding:0;min-width:0;overflow-wrap:anywhere}
+.order-expand{white-space:normal}
+.order-expand[aria-expanded=true]{background:var(--surface);border:1px solid var(--border-strong)}
+.order-detail-inline .order-next-action{margin-top:0}
+.order-detail-inline .order-lines li{gap:16px;min-width:0}
+.order-detail-inline .order-lines li>span{min-width:0}
+.order-detail-inline .order-lines li>strong{flex-shrink:0}
+.order-detail-inline .order-history summary{font-weight:600;cursor:pointer}
+@media(prefers-reduced-motion:no-preference){.order-expanded{animation:pedido-abrir .15s ease-out}@keyframes pedido-abrir{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}}
+.order-detail-inline :is(.order-next-action,.order-cancellation,.order-payment,.delivery-summary){padding:14px 16px;margin-block:12px}
+.order-detail-inline :is(h3,p){margin-block:8px}
+.order-detail-inline .order-lines{margin-block:8px}
+.order-detail-inline .cart-summary{padding-block:10px}
