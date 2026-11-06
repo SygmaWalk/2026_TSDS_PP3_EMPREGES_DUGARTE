@@ -9,6 +9,7 @@ function comprobar(e){
  if(['42501','PGRST116','PT404'].includes(e.code))throw Error('No tenés permiso para guardar este producto o ya no está disponible.')
  if(e.code==='PT409')throw Error(e.message)
  if(e.code==='22023')throw Error(e.message)
+ if(e.code==='22023')throw Error(e.message || 'Revisá los componentes y sus cantidades.')
  if(e.code==='23514')throw Error('Revisá los datos y la imagen del producto antes de guardar.')
  throw Error('No se pudo completar la operación. Revisá tu conexión e intentá nuevamente.')
 }
@@ -42,3 +43,4 @@ export function crearProductosRepository(client,emprendimientoId){
   async visibilidad(id,visible){const {data,error}=await client.from('productos').update({visible}).eq('id',id).eq('emprendimiento_id',emprendimientoId).select(COLUMNAS+',componentes_producto!componentes_padre_fk(componente_id,cantidad)').single();comprobar(error);return desdeFila(data)}
  }
 }
+

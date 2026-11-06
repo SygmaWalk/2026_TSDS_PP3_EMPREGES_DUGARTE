@@ -1008,3 +1008,25 @@
 .product-retire-dialog::backdrop{background:#0008}
 .product-retire-dialog p{line-height:1.6}
 .product-retire-dialog .form-actions{flex-wrap:wrap}
+/* El contenido largo debe envolver dentro de su tarjeta, sin ensanchar la grilla. */
+.product-item,.product-main,.product-title-row,.product-meta,.preview-grid>li,.catalog-rule-card,.catalog-rule-card>div,.panel-heading>div{min-width:0;overflow-wrap:anywhere}
+.product-title-row h3,.preview-grid strong,.product-description,.catalog-rule-card strong{overflow-wrap:anywhere;white-space:normal}
+.product-form .form-fields{min-width:0;align-items:start}
+.product-form .field-group{min-width:0;align-content:start}
+.product-form :is(input,select,textarea){max-width:100%;min-width:0}
+.composition-row{min-width:0}
+.product-catalog-tools{padding:20px;margin-bottom:20px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.product-catalog-tools h2{margin:0 0 8px}
+.product-catalog-tools p{margin:0 0 16px;color:var(--text-muted)}
+.catalog-rules{margin-block:16px}
+.catalog-rule-list{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.catalog-rule-card{display:flex;align-items:start;justify-content:space-between;gap:16px;padding:16px;border:1px solid var(--border);border-radius:12px}
+.catalog-rule-card p{margin:6px 0;line-height:1.5}
+.catalog-rule-card .button{flex-shrink:0}
+.catalog-rule-form .rule-products{grid-column:1/-1;min-width:0;display:grid;gap:10px;border:1px solid var(--border);border-radius:10px;padding:16px}
+.catalog-rule-form .rule-check{display:flex;align-items:start;gap:10px;overflow-wrap:anywhere}
+.catalog-rule-form .rule-check input{width:auto;flex-shrink:0;margin-top:4px}
+.catalog-rule-form .rule-help{grid-column:1/-1}
+.catalog-store .preview-grid:not(.preview-list)>li{display:flex;flex-direction:column;min-width:0}
+.catalog-store .preview-grid:not(.preview-list)>li>.button{margin-top:auto}
+@media(max-width:600px){.catalog-rule-card{flex-wrap:wrap}.catalog-rule-card>div{flex:1 1 100%}.product-catalog-tools{padding:16px}.product-actions .button{white-space:normal}}

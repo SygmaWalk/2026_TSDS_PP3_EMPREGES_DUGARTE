@@ -13,7 +13,7 @@ const FORMULARIO_VACIO = {
 
 function ProductoForm({
   producto,
-  productosExistentes,
+  productosExistentes = [],
   onGuardar,
   onCancelar,
   guardando = false,
@@ -55,7 +55,7 @@ function ProductoForm({
     if (guardando || errores.imagen) return
     const resultado = validarProducto(
       campos,
-      productosExistentes,
+      productosExistentes = [],
       producto?.id ?? null,
     )
 
@@ -151,11 +151,14 @@ function ProductoForm({
         </div>
 
 <section className="product-composition" aria-label="Composición del producto">
-          <h3>Componentes obligatorios</h3>
+          <h3>Componentes del producto o combo</h3>
           <label className="combo-toggle"><input type="checkbox" checked={esCombo} onChange={e=>setEsCombo(e.target.checked)}/> Es un combo: utiliza únicamente el stock de sus componentes</label>
           <p>{esCombo?'El combo tiene su propio precio. No se cargan existencias del combo.':'Este producto usa sus propias existencias y las de los componentes que agregues.'} Los componentes no suman precio al carrito.</p>
+          {esCombo && producto && !producto.esCombo && <p className="field-help">Para convertir un producto existente en combo, sus existencias propias deben estar en cero. Podés ajustarlas en Inventario o crear un combo nuevo.</p>}
+          <p className="field-help">Agregá una fila, elegí un producto existente de esta tienda e indicá cuántas unidades consume. Los adicionales opcionales se administran en «Configurar adicionales y promociones».</p>
+          {!productosExistentes.some(p=>p.id!==producto?.id && !p.archivado) && <p role="status">Primero creá otro producto para usarlo como componente.</p>}
           {componentes.map((c,i)=><div className="composition-row" key={i}>
-           <div className="field-group"><label htmlFor={'componente-'+i}>Componente {i+1}</label><select id={'componente-'+i} value={c.componente_id} onChange={e=>setComponentes(cs=>cs.map((x,j)=>j===i?{...x,componente_id:e.target.value}:x))}><option value="">Seleccionar producto</option>{productosExistentes.filter(p=>p.id!==producto?.id).map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}</select></div>
+           <div className="field-group"><label htmlFor={'componente-'+i}>Componente {i+1}</label><select id={'componente-'+i} value={c.componente_id} onChange={e=>setComponentes(cs=>cs.map((x,j)=>j===i?{...x,componente_id:e.target.value}:x))}><option value="">Seleccionar producto</option>{productosExistentes.filter(p=>!p.archivado && p.id!==producto?.id && !componentes.some((otro,j)=>j!==i && String(otro.componente_id)===String(p.id))).map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}</select></div>
            <div className="field-group"><label htmlFor={'componente-cantidad-'+i}>Cantidad del componente {i+1}</label><input id={'componente-cantidad-'+i} type="number" min="1" max="999" step="1" value={c.cantidad} onChange={e=>setComponentes(cs=>cs.map((x,j)=>j===i?{...x,cantidad:e.target.value}:x))}/></div>
            <button className="button button-secondary" type="button" aria-label={'Quitar componente '+(i+1)} onClick={()=>setComponentes(cs=>cs.filter((_,j)=>j!==i))}>Quitar</button>
           </div>)}
@@ -183,3 +186,4 @@ function ProductoForm({
 }
 
 export default ProductoForm
+
