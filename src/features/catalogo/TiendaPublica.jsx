@@ -1,3 +1,5 @@
+import PedidoHabitual from './PedidoHabitual.jsx'
+import { incorporarHabituales } from './pedidoHabitual.js'
 import ConfirmarPedido from '../pedidos/ConfirmarPedido.jsx'
 import { claveConfirmacion, leerConfirmacion, guardarConfirmacion } from '../pedidos/pedidosRepository.js'
 import { useEffect, useState } from 'react'
@@ -71,6 +73,12 @@ export default function TiendaPublica({ client, pedidoClient = client, identidad
           <>
             <div className="store-container store-content">
               <nav hidden={confirmando} className="store-navigation" aria-label="Tienda"><button className={'store-tab ' + (vista === 'catalogo' ? 'store-tab-active' : '')} aria-current={vista === 'catalogo' ? 'page' : undefined} onClick={() => setVista('catalogo')}>Catálogo</button><button className={'store-tab ' + (vista === 'carrito' ? 'store-tab-active' : '')} aria-current={vista === 'carrito' ? 'page' : undefined} onClick={() => setVista('carrito')}>Carrito ({unidades})</button><button className="store-refresh" onClick={() => setIntento(intento + 1)}>Actualizar catálogo</button></nav>
+              {!confirmando && vista === 'catalogo' && usuario && pedidoClient && <PedidoHabitual client={pedidoClient} negocioId={estado.negocio.id} cargarProductos={async()=>{const tienda=await cargarTienda(client,slug);if(!tienda)throw Error('La tienda ya no está disponible.');return tienda.productos}} onAgregar={(sugeridos,productos) => {
+                const items = incorporarHabituales(estado.items, sugeridos, productos)
+                const aviso = guardarCarrito(claveCarritoInvitado(estado.negocio.id), items)
+                setEstado({ ...estado, productos, items, aviso }); setVista('carrito')
+                setMensaje('Sugerencia agregada. Revisá cantidades, adicionales y total antes de confirmar.'); setErrorAccion('')
+              }}/>}
               {estado.aviso && <p role="alert" className="error-feedback">{estado.aviso}</p>}
               {errorAccion && <p role="alert" className="error-feedback">{errorAccion}</p>}
               {mensaje && <p role="status" className="feedback">{mensaje}</p>}

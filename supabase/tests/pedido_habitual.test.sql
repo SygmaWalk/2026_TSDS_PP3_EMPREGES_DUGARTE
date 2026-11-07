@@ -1,0 +1,43 @@
+begin;
+set local role postgres;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select no_plan();
+insert into auth.users(id,email) values ('00000000-0000-0000-0000-000000009441','habitual-a@example.test'),('00000000-0000-0000-0000-000000009442','habitual-b@example.test');
+insert into emprendimientos(id,nombre,slug,activo) overriding system value values(-99441,'Habitual A','test-habitual-a',true),(-99442,'Habitual B','test-habitual-b',true);
+insert into productos(id,emprendimiento_id,nombre,precio,visible) overriding system value values(-99441,-99441,'Pizza',1000,true),(-99442,-99441,'Bebida',500,true);
+insert into movimientos_stock(emprendimiento_id,producto_id,clave,tipo,cantidad,motivo) values(-99441,-99441,gen_random_uuid(),'Entrada',20,'Prueba'),(-99441,-99442,gen_random_uuid(),'Entrada',20,'Prueba');
+insert into pedidos(id,emprendimiento_id,cliente_usuario_id,nombre_contacto,telefono_contacto,subtotal,fecha_creacion) overriding system value values
+(-99441,-99441,'00000000-0000-0000-0000-000000009441','Cliente','1111111111',1000,now()-interval '3 days'),
+(-99442,-99441,'00000000-0000-0000-0000-000000009441','Cliente','1111111111',2000,now()-interval '2 days'),
+(-99443,-99441,'00000000-0000-0000-0000-000000009441','Cliente','1111111111',2000,now()-interval '1 day');
+insert into detalles_pedido(pedido_id,producto_id,nombre_producto,precio_unitario,cantidad) values(-99441,-99441,'Pizza',1000,1),(-99442,-99441,'Pizza',1000,2),(-99443,-99441,'Pizza',1000,2),(-99443,-99442,'Bebida',500,1);
+insert into pedidos(id,emprendimiento_id,cliente_usuario_id,nombre_contacto,telefono_contacto,subtotal,estado,motivo_cancelacion) overriding system value values(-99444,-99441,'00000000-0000-0000-0000-000000009441','Cliente','1111111111',9000,'Cancelado','Prueba');
+insert into detalles_pedido(pedido_id,producto_id,nombre_producto,precio_unitario,cantidad) values(-99444,-99441,'Pizza',1000,9);
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000009441","role":"authenticated"}',true);
+select is(public.mi_pedido_habitual(-99441)->>'pedidos','3','Solo pedidos no cancelados');
+select is(jsonb_array_length(public.mi_pedido_habitual(-99441)->'items'),1,'Solo productos presentes en mayoría');
+select is(public.mi_pedido_habitual(-99441)->'items'->0->>'cantidad','2','Cantidad modal sin cancelados');
+select is(public.mi_pedido_habitual(-99441)->'items'->0->>'disponible','true','Comprueba stock');
+select is(public.mi_pedido_habitual(-99442)->>'pedidos','0','Historial separado por tienda');
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000009442","role":"authenticated"}',true);
+select is(public.mi_pedido_habitual(-99441)->>'pedidos','0','Otra cuenta no hereda compras por contacto');
+set local role postgres;
+update productos set visible=false where id=-99441;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000009441","role":"authenticated"}',true);
+select is(public.mi_pedido_habitual(-99441)->'items'->0->>'disponible','false','Producto oculto se informa no disponible');
+set local role postgres;
+update productos set visible=false,archivado=true where id=-99441;
+set local role authenticated;
+select is(public.mi_pedido_habitual(-99441)->'items'->0->>'disponible','false','Producto archivado no se ofrece vigente');
+set local role postgres;
+update cuentas_acceso set habilitada=false where usuario_id='00000000-0000-0000-0000-000000009441';
+set local role authenticated;
+select throws_ok('select public.mi_pedido_habitual(-99441)','42501',null,'Cuenta deshabilitada no consulta');
+set local role anon;
+select throws_ok('select public.mi_pedido_habitual(-99441)','42501',null,'Anónimo no consulta');
+set local role postgres;
+select * from finish();
+rollback;
