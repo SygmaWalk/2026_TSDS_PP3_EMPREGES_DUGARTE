@@ -28,6 +28,12 @@ export function crearPanelPedidosRepository(client, negocioId, usuarioId) {
     }
   }
   return {
+    async ventasPorPeriodo(desde, hasta) {
+      intervaloFechas(desde, hasta)
+      const { data, error } = await client.rpc('ventas_por_periodo', { p_negocio: negocioId, p_desde: desde, p_hasta: hasta })
+      if (error) throw error
+      return data
+    },
     async listar({estado='',desde='',hasta='',pagina=0,grupo='todos'}={}) {
       const {inicio,fin}=intervaloFechas(desde,hasta)
       if (!Number.isInteger(pagina) || pagina<0 || !['',...ESTADOS_FILTRO].includes(estado)) throw new Error('Revisá los filtros del listado.')

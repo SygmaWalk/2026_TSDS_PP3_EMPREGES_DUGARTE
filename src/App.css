@@ -1066,3 +1066,8 @@
 .order-edit :is(input:not([type="checkbox"]),select,textarea) { box-sizing:border-box; min-width:0; width:100%; font:inherit; padding:.65rem; color:var(--text); background:var(--surface); border:1px solid var(--border-strong); border-radius:8px; }
 .order-edit .edit-check { display:flex; align-items:baseline; gap:.6rem; }
 .order-edit .button { justify-self:start; max-width:100%; }
+
+.sales-period-chart { padding: 0; list-style: none; max-height: 25rem; overflow: auto; }
+.sales-period-chart li { display: grid; grid-template-columns: auto minmax(2rem,1fr) auto; gap: .75rem; align-items: center; padding: .4rem 0; font-variant-numeric: tabular-nums; }
+.sales-period-bar { height: .65rem; background: #e5e7eb; border-radius: .3rem; overflow: hidden; }
+.sales-period-bar > span { display: block; height: 100%; background: #216b59; }
