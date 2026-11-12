@@ -48,7 +48,7 @@ export function crearPanelPedidosRepository(client, negocioId, usuarioId) {
     async detalle(id, clienteId = null) {
       await autorizar()
       try {
-        let q=client.from('pedidos').select((clienteId !== null ? 'clientes_comerciales!inner(id),' : '') + 'id,nombre_contacto,telefono_contacto,subtotal,entrega,costo_envio,total,estado,estado_pago,pago_efectivo,pago_transferencia,metodo_pago_previsto,metodo_pago,fecha_pago,version_pago,motivo_cancelacion,fecha_estado,fecha_creacion,stock_descontado,consumos_stock_pedido(producto_id,nombre_producto,cantidad,cantidad_devuelta),detalles_pedido(producto_id,nombre_producto,precio_unitario,cantidad,adicionales,promocion),historial_estados_pedido(id,estado_anterior,estado_nuevo,fecha)')
+        let q=client.from('pedidos').select((clienteId !== null ? 'clientes_comerciales!inner(id),' : '') + 'id,nombre_contacto,telefono_contacto,subtotal,entrega,costo_envio,total,estado,estado_pago,pago_efectivo,pago_transferencia,metodo_pago_previsto,metodo_pago,fecha_pago,version_pago,motivo_cancelacion,fecha_estado,fecha_creacion,revision,stock_descontado,consumos_stock_pedido(producto_id,nombre_producto,cantidad,cantidad_devuelta),detalles_pedido(producto_id,nombre_producto,precio_unitario,cantidad,adicionales,promocion),historial_estados_pedido(id,estado_anterior,estado_nuevo,fecha)')
           .eq('emprendimiento_id',negocioId).eq('id',id)
         if (clienteId !== null) q=q.eq('cliente_comercial_id',clienteId)
         const {data,error}=await q.maybeSingle()
@@ -57,6 +57,30 @@ export function crearPanelPedidosRepository(client, negocioId, usuarioId) {
       }catch{throw new Error('No se pudo cargar el detalle del pedido. Intentá nuevamente.')}
     },
 
+    async catalogoEdicion() {
+      await autorizar()
+      const [productos,opciones]=await Promise.all([
+        client.from('productos').select('id,nombre').eq('emprendimiento_id',negocioId).eq('visible',true).eq('archivado',false).order('nombre'),
+        client.rpc('opciones_catalogo',{p_negocio:negocioId})
+      ])
+      if(productos.error||opciones.error)throw Error('No se pudo cargar el catálogo vigente. Intentá nuevamente.')
+      return productos.data.filter(p=>opciones.data.some(o=>o.producto_id===p.id)).map(p=>({...p,...opciones.data.find(o=>o.producto_id===p.id)}))
+    },
+    async modificar(datos,guardar=false) {
+      await autorizar()
+      const {data,error}=await client.rpc('modificar_pedido',{...datos,p_negocio:negocioId,p_guardar:guardar})
+      if(error){
+        const definitivo=['22023','42501','PT404','PT409'].includes(error.code)
+        throw Object.assign(Error(definitivo?error.message:'No se pudo comprobar el resultado. Reintentá con los mismos datos o actualizá el pedido.'),{definitivo})
+      }
+      return data
+    },
+    async modificaciones(id) {
+      await autorizar()
+      const {data,error}=await client.from('modificaciones_pedido').select('id,fecha,motivo,usuario_id,anterior,nuevo,respuesta').eq('emprendimiento_id',negocioId).eq('pedido_id',id).order('fecha',{ascending:false}).order('id',{ascending:false}).limit(100)
+      if(error)throw Error('No se pudo cargar el historial de modificaciones.')
+      return data
+    },
     async cambiarEstado(id, anterior, estado) {
       await autorizar()
       const {data,error}=await client.rpc('cambiar_estado_pedido',{p_pedido:id,p_negocio:negocioId,p_anterior:anterior,p_estado:estado})

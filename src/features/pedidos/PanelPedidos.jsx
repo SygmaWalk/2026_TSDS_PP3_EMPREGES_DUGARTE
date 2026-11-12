@@ -1,3 +1,4 @@
+import EditarPedido,{HistorialModificaciones} from './EditarPedido.jsx'
 import {useRuta,leerRuta,navegar,rutaNegocio} from '../../navigation.js'
 import DevolucionStock from './DevolucionStock.jsx'
 import { cantidadesDevolucion } from './devolucionStock.js'
@@ -58,11 +59,12 @@ export function Avisos({repository,onActualizar,onVerNuevos}) {
   </section>
 }
 
-export function DetallePedido({repository,id,version,puedeGestionar,puedeRegistrarPago,onVolver,onReintentar,onActualizar,etiquetaVolver="← Volver al listado",compacto=false}) {
+export function DetallePedido({repository,id,version,puedeGestionar,puedeModificar=false,puedeRegistrarPago,onVolver,onReintentar,onActualizar,etiquetaVolver="← Volver al listado",compacto=false}) {
   const [resultado,setResultado]=useState({cargando:true,pedido:null,error:''})
   const [guardando,setGuardando]=useState(false)
   const [mensaje,setMensaje]=useState('')
   const [falloCambio,setFalloCambio]=useState('')
+  const [editando,setEditando]=useState(false)
   const [cancelando,setCancelando]=useState(false)
   const [motivo,setMotivo]=useState('')
   const [devoluciones,setDevoluciones]=useState({})
@@ -94,10 +96,11 @@ export function DetallePedido({repository,id,version,puedeGestionar,puedeRegistr
     {resultado.cargando ? <p role="status">Cargando detalle…</p> : resultado.error ? <><p role="alert" className="error-feedback">{resultado.error}</p><button className="button" onClick={onReintentar}>Reintentar detalle</button></> : !p ? <p role="alert">El pedido no está disponible o ya no tenés acceso.</p> : <>
       {!compacto && <div className="order-detail-heading"><div><span className="eyebrow">DETALLE DEL PEDIDO</span><h2>Pedido #{p.id}</h2><time dateTime={p.fecha_creacion}>{fecha(p.fecha_creacion)}</time></div><Estado valor={p.estado}/></div>}
       {!compacto&&p.estado!=='Cancelado'&&<ol className="order-progress" aria-label="Progreso del pedido">{flujoPedido(p.entrega).map((estado,i)=><li key={estado} className={i<=flujoPedido(p.entrega).indexOf(p.estado)?'step-reached':''} aria-current={estado===p.estado?'step':undefined}><span aria-hidden="true">{i+1}</span>{estado}</li>)}</ol>}
-      <div className="order-next-action"><div><strong>{p.estado==='Cancelado'?'Pedido cancelado':p.estado==='Entregado'?'Pedido entregado':'Próximo paso'}</strong><p>{puedeGestionar?(siguienteEstado(p.estado,p.entrega)?'Confirmá el avance cuando la operación esté realizada.':p.estado==='Cancelado'?'Se conserva en el historial y no puede reabrirse.':'El recorrido de este pedido está completo.'):'Tu cuenta tiene acceso de consulta a este pedido.'}</p></div>{puedeGestionar&&siguienteEstado(p.estado,p.entrega)&&siguienteEstado(p.estado,p.entrega)!=='Entregado'&&<button className="button button-primary" disabled={guardando} onClick={()=>avanzar()}>{guardando?'Guardando…':'Pasar a '+siguienteEstado(p.estado,p.entrega)}</button>}</div>
+      {editando&&puedeModificar?<EditarPedido pedido={p} repository={repository} onCerrar={()=>{setEditando(false);onActualizar()}} onGuardado={()=>{setEditando(false);setMensaje('Modificación guardada.');onActualizar()}}/>:puedeModificar&&['Pendiente','En preparación'].includes(p.estado)&&p.estado_pago!=='Pagado'&&!p.fecha_pago&&!Number(p.pago_efectivo)&&!Number(p.pago_transferencia)&&<button className="button button-secondary" disabled={guardando||cancelando} onClick={()=>{setEditando(true);setMensaje('')}}>Modificar pedido</button>}
+      <div className="order-next-action"><div><strong>{p.estado==='Cancelado'?'Pedido cancelado':p.estado==='Entregado'?'Pedido entregado':'Próximo paso'}</strong><p>{puedeGestionar?(siguienteEstado(p.estado,p.entrega)?'Confirmá el avance cuando la operación esté realizada.':p.estado==='Cancelado'?'Se conserva en el historial y no puede reabrirse.':'El recorrido de este pedido está completo.'):'Tu cuenta tiene acceso de consulta a este pedido.'}</p></div>{puedeGestionar&&siguienteEstado(p.estado,p.entrega)&&siguienteEstado(p.estado,p.entrega)!=='Entregado'&&<button className="button button-primary" disabled={guardando||editando} onClick={()=>avanzar()}>{guardando?'Guardando…':'Pasar a '+siguienteEstado(p.estado,p.entrega)}</button>}</div>
       {puedeGestionar&&siguienteEstado(p.estado,p.entrega)==='Entregado'&&<FinalizarEntrega pedido={p} puedeRegistrarPago={puedeRegistrarPago} repository={repository} onActualizar={onActualizar}/>}
       {p.estado==='Cancelado'&&<section className="order-cancellation"><h3>Motivo de cancelación</h3><p className="cancellation-reason">{p.motivo_cancelacion}</p><time dateTime={p.fecha_estado}>{fecha(p.fecha_estado)}</time></section>}
-      {puedeGestionar&&puedeCancelar(p.estado)&&<section className="order-cancellation">
+      {!editando&&puedeGestionar&&puedeCancelar(p.estado)&&<section className="order-cancellation">
         {!cancelando?<button className="button button-secondary" disabled={guardando} onClick={()=>{setCancelando(true);setFalloCambio('');setDevoluciones({})}}>Cancelar pedido</button>:
         <form onSubmit={e=>{e.preventDefault();void avanzar(true)}}>
           <h3>Cancelar pedido #{p.id}</h3>{p.estado==='En ruta de entrega'&&<p>El pedido ya está en ruta. Coordiná la interrupción de la entrega antes de cancelar.</p>}<p>El pedido quedará cancelado y no podrá reabrirse. Sus productos e historial se conservarán.</p>{p.estado_pago==='Pagado'&&<p>El pago registrado se conservará. Esta acción no registra ni realiza una devolución.</p>}
@@ -111,14 +114,15 @@ export function DetallePedido({repository,id,version,puedeGestionar,puedeRegistr
       <h3>Productos del pedido</h3><ul className="order-lines">{p.detalles_pedido.map(d=><li key={d.producto_id}><span><strong>{d.cantidad} × {d.nombre_producto}</strong><small>{importe(d.precio_unitario)} por unidad</small>{d.promocion && <small>Promoción: {d.promocion.nombre} ({d.promocion.porcentaje}%)</small>}{d.adicionales?.map(a=><small key={a.id}>{a.nombre} (+{importe(a.centavos/100)} por unidad)</small>)}</span><strong>{importe(d.precio_unitario*d.cantidad)}</strong></li>)}</ul>
       {(!compacto || p.entrega?.modalidad==='envio') && <div className="cart-summary"><span>Subtotal de productos</span><strong>{importe(p.subtotal)}</strong></div>}
       <ResumenEntrega compacto={compacto} entrega={p.entrega} costo={Math.round(Number(p.costo_envio??0)*100)} total={Math.round(Number(p.total??p.subtotal)*100)}/>
-      {!(puedeGestionar&&siguienteEstado(p.estado,p.entrega)==='Entregado'&&p.estado_pago!=='Pagado')&&<PagoPedido pedido={p} puedeRegistrar={puedeRegistrarPago} repository={repository} onActualizar={onActualizar}/>}
+      {!editando&&!(puedeGestionar&&siguienteEstado(p.estado,p.entrega)==='Entregado'&&p.estado_pago!=='Pagado')&&<PagoPedido pedido={p} puedeRegistrar={puedeRegistrarPago} repository={repository} onActualizar={onActualizar}/>}
       {compacto ? p.entrega?.modalidad==='envio' && <details className="order-history"><summary>Ver mapa y ubicación de entrega</summary><UbicacionEntrega entrega={p.entrega}/></details> : <UbicacionEntrega entrega={p.entrega}/>}
 {p.stock_descontado&&<details className="order-stock-history"><summary>Stock del pedido</summary><ul>{(p.consumos_stock_pedido??[]).map(c=><li key={c.producto_id}>{c.nombre_producto}: {Number(c.cantidad).toLocaleString('es-AR')} descontado{p.estado==='Cancelado'?' · '+Number(c.cantidad_devuelta).toLocaleString('es-AR')+' devuelto':''}</li>)}</ul></details>}
+      {repository.modificaciones&&<HistorialModificaciones repository={repository} id={id} version={version}/>}
       <details className="order-history"><summary>Historial de estados</summary><ol><li><strong>Pedido recibido · Pendiente</strong><time>{fecha(p.fecha_creacion)}</time></li>{[...(p.historial_estados_pedido??[])].sort((a,b)=>a.fecha.localeCompare(b.fecha)||a.id-b.id).map(h=><li key={h.id}><strong>{h.estado_anterior} → {h.estado_nuevo}</strong><time dateTime={h.fecha}>{fecha(h.fecha)}</time></li>)}</ol></details>
     </>}
   </section>
 }
-function Lista({repository,consulta,version,onAbrir,onPagina,onReintentar,seleccionado,puedeGestionar,puedeRegistrarPago,onActualizar}) {
+function Lista({repository,consulta,version,onAbrir,onPagina,onReintentar,seleccionado,puedeGestionar,puedeModificar,puedeRegistrarPago,onActualizar}) {
   const [resultado,setResultado]=useState({cargando:true,pedidos:[],total:0,error:''})
   useEffect(()=>{
     let vigente=true
@@ -137,7 +141,7 @@ function Lista({repository,consulta,version,onAbrir,onPagina,onReintentar,selecc
         <div className="order-card-customer"><strong>{p.nombre_contacto}</strong><span>{p.telefono_contacto}</span><small>{p.entrega?.modalidad==='envio'?'Envío a domicilio':p.entrega?.modalidad==='retiro'?'Retiro en el local':'Entrega no informada'}</small></div>
         <div className="order-row-total"><Estado valor={p.estado}/><strong>{importe(p.total??p.subtotal)}</strong><ResumenPago pedido={p}/></div>
         <button className="button button-secondary order-expand" onClick={()=>onAbrir(seleccionado===p.id?null:p.id)} aria-expanded={seleccionado===p.id} aria-controls={'pedido-detalle-'+p.id} aria-label={(seleccionado===p.id?'Cerrar pedido #':'Ver pedido #')+p.id}>{seleccionado===p.id?'Cerrar detalle ▴':'Ver detalle ▾'}</button>
-        {seleccionado===p.id && <div id={'pedido-detalle-'+p.id} className="order-expanded"><DetallePedido compacto repository={repository} id={p.id} version={version} puedeGestionar={puedeGestionar} puedeRegistrarPago={puedeRegistrarPago} onVolver={()=>onAbrir(null)} onReintentar={onReintentar} onActualizar={onActualizar}/></div>}
+        {seleccionado===p.id && <div id={'pedido-detalle-'+p.id} className="order-expanded"><DetallePedido compacto repository={repository} id={p.id} version={version} puedeGestionar={puedeGestionar} puedeModificar={puedeModificar} puedeRegistrarPago={puedeRegistrarPago} onVolver={()=>onAbrir(null)} onReintentar={onReintentar} onActualizar={onActualizar}/></div>}
       </li>)}</ul>}
     <nav className="orders-pagination" aria-label="Páginas de pedidos"><button className="button button-secondary" disabled={consulta.pagina===0} onClick={()=>onPagina(consulta.pagina-1)}>Anterior</button><span>Página {consulta.pagina+1}</span><button className="button button-secondary" disabled={(consulta.pagina+1)*TAMANO_PAGINA>=resultado.total} onClick={()=>onPagina(consulta.pagina+1)}>Siguiente</button></nav>
   </section>
@@ -177,7 +181,7 @@ export default function PanelPedidos({client,negocio,usuarioId,rol,email,onVolve
       <nav className="view-nav" aria-label="Secciones del emprendimiento">{negocio.permisos.includes('productos.ver')&&<button className="button" onClick={onProductos}>Productos</button>}<button className="button" aria-current="page" onClick={()=>setSeleccionado(null)}>Pedidos</button></nav>
       {!avisosExternos&&<Avisos repository={repository} onActualizar={actualizar} onVerNuevos={limpiar}/>}
       {avisosExternos&&<div className="orders-state-tabs" aria-label="Bandejas de pedidos">{[['activos','En curso'],['historial','Historial'],['todos','Todos']].map(([id,titulo])=><button className="orders-state-tab" aria-pressed={consulta.grupo===id} key={id} onClick={()=>{const x={estado:'',desde:'',hasta:'',grupo:id,pagina:0};setFiltros(x);setConsulta(x);setSeleccionado(null)}}>{titulo}</button>)}</div>}
-      {destino?.seccion==='pedidos' && destino.detalle!==null ? <DetallePedido key={seleccionado} version={version} puedeRegistrarPago={negocio.permisos.includes('pedidos.registrar_pago')} puedeGestionar={negocio.permisos.includes('pedidos.actualizar_estado')} repository={repository} id={seleccionado} onVolver={()=>setSeleccionado(null)} onReintentar={actualizar} onActualizar={actualizar}/> : <>
+      {destino?.seccion==='pedidos' && destino.detalle!==null ? <DetallePedido key={seleccionado} version={version} puedeRegistrarPago={negocio.permisos.includes('pedidos.registrar_pago')} puedeGestionar={negocio.permisos.includes('pedidos.actualizar_estado')} puedeModificar={negocio.permisos.includes('pedidos.modificar')} repository={repository} id={seleccionado} onVolver={()=>setSeleccionado(null)} onReintentar={actualizar} onActualizar={actualizar}/> : <>
         {!avisosExternos&&<div className="orders-state-tabs" aria-label="Filtrar pedidos por estado">{['',...ESTADOS_PEDIDO].map(estado=><button key={estado} className={'orders-state-tab '+(consulta.estado===estado?'is-active':'')} aria-pressed={consulta.estado===estado} onClick={()=>{setFiltros({...filtros,estado});setConsulta({...consulta,estado,pagina:0});setSeleccionado(null);setError('')}}>{estado||'Todos'}</button>)}</div>}
         <details className="orders-advanced" open={!avisosExternos||undefined}><summary>Fechas y filtros avanzados</summary><form className="panel orders-filters" onSubmit={aplicar}>
           <div className="field-group"><label htmlFor="pedido-estado">Estado</label><select id="pedido-estado" value={filtros.estado} onChange={e=>setFiltros({...filtros,estado:e.target.value})}><option value="">Todos los estados</option>{ESTADOS_PEDIDO.map(e=><option key={e}>{e}</option>)}<optgroup label="Estados de pedidos anteriores"><option value="Confirmado">Confirmado (anterior)</option><option value="Listo para entregar">Listo para entregar (anterior)</option></optgroup></select></div>
@@ -187,7 +191,7 @@ export default function PanelPedidos({client,negocio,usuarioId,rol,email,onVolve
           <small>Las fechas incluyen el día completo según la hora de este dispositivo.</small>
         </form></details>
         {error&&<p role="alert" className="error-feedback">{error}</p>}
-        <Lista seleccionado={seleccionado} puedeGestionar={negocio.permisos.includes('pedidos.actualizar_estado')} puedeRegistrarPago={negocio.permisos.includes('pedidos.registrar_pago')} onActualizar={actualizar} key={JSON.stringify(consulta)} version={version} repository={repository} consulta={consulta} onAbrir={setSeleccionado} onPagina={pagina=>{setConsulta({...consulta,pagina});setSeleccionado(null)}} onReintentar={actualizar}/>
+        <Lista seleccionado={seleccionado} puedeGestionar={negocio.permisos.includes('pedidos.actualizar_estado')} puedeModificar={negocio.permisos.includes('pedidos.modificar')} puedeRegistrarPago={negocio.permisos.includes('pedidos.registrar_pago')} onActualizar={actualizar} key={JSON.stringify(consulta)} version={version} repository={repository} consulta={consulta} onAbrir={setSeleccionado} onPagina={pagina=>{setConsulta({...consulta,pagina});setSeleccionado(null)}} onReintentar={actualizar}/>
       </>}
     </div>
   </main>

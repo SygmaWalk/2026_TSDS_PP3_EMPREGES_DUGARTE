@@ -1,6 +1,6 @@
 export const CATALOGO_PERMISOS = [
  ['Productos', [['productos.ver','Consultar productos'],['productos.crear','Crear productos'],['productos.editar','Editar productos'],['productos.publicar','Mostrar u ocultar productos']]],
- ['Pedidos', [['pedidos.ver','Consultar pedidos'],['pedidos.actualizar_estado','Cambiar estado y cancelar'],['pedidos.registrar_pago','Registrar cobros']]],
+ ['Pedidos', [['pedidos.ver','Consultar pedidos'],['pedidos.actualizar_estado','Cambiar estado y cancelar'],['pedidos.modificar','Modificar contenido de pedidos'],['pedidos.registrar_pago','Registrar cobros']]],
  ['Clientes', [['clientes.ver','Consultar clientes'],['clientes.editar','Editar clientes']]],
  ['Inventario', [['stock.ver','Consultar inventario'],['stock.registrar','Registrar movimientos']]],
  ['Tienda y entregas', [['tienda.configurar','Configurar tienda'],['entregas.configurar','Configurar entregas']]],

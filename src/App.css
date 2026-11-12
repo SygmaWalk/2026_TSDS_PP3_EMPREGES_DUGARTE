@@ -1060,3 +1060,9 @@
 .delivery-settings select, .zone-card input, .saved-addresses input:not([type="checkbox"]) { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--border-strong); border-radius: 10px; padding: 11px 12px; color: var(--text); background: var(--surface); font: inherit; }
 .saved-addresses .form-fields > label { display: grid; gap: 7px; }
 .saved-addresses input[type="checkbox"] { width: auto; justify-self: start; }
+
+.order-edit,.edit-preview,.edit-line { display:grid; min-width:0; gap:.8rem; padding:1rem; margin:.8rem 0; border:1px solid var(--border-strong); border-radius:12px; }
+.order-edit label { display:grid; gap:.4rem; min-width:0; }
+.order-edit :is(input:not([type="checkbox"]),select,textarea) { box-sizing:border-box; min-width:0; width:100%; font:inherit; padding:.65rem; color:var(--text); background:var(--surface); border:1px solid var(--border-strong); border-radius:8px; }
+.order-edit .edit-check { display:flex; align-items:baseline; gap:.6rem; }
+.order-edit .button { justify-self:start; max-width:100%; }

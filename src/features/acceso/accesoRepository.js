@@ -9,7 +9,7 @@ export async function obtenerAcceso(client, usuarioId) {
   if (rol === 'administrador') {
     const { data, error } = await client.from('emprendimientos').select('id,nombre,slug,activo').order('id')
     if (error) throw new Error('No se pudieron cargar los emprendimientos.')
-    return { rol, habilitada: true, negocios: data.map(n => ({ ...n, permisos: [...PERMISOS_PRODUCTOS, 'pedidos.ver', 'pedidos.actualizar_estado', 'pedidos.registrar_pago', 'clientes.ver', 'clientes.editar', 'entregas.configurar', 'stock.ver', 'stock.registrar', 'tienda.configurar'] })) }
+    return { rol, habilitada: true, negocios: data.map(n => ({ ...n, permisos: [...PERMISOS_PRODUCTOS, 'pedidos.ver', 'pedidos.actualizar_estado', 'pedidos.modificar', 'pedidos.registrar_pago', 'clientes.ver', 'clientes.editar', 'entregas.configurar', 'stock.ver', 'stock.registrar', 'tienda.configurar'] })) }
   }
   if (rol !== 'emprendimiento') throw new Error('La cuenta no tiene un rol válido.')
   const { data, error } = await client.from('miembros_emprendimiento')
