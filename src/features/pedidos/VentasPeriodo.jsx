@@ -20,8 +20,8 @@ export default function VentasPeriodo({ consultar }) {
     setResultado(null)
     setOcupado(true)
     try {
-      const dias = await consultar(desde, hasta)
-      setResultado({ dias, desde, hasta })
+      const { dias, productos } = await consultar(desde, hasta)
+      setResultado({ dias, productos, desde, hasta })
     } catch {
       setError('No se pudo consultar el período. Revisá las fechas y volvé a intentar.')
     } finally {
@@ -52,6 +52,17 @@ export default function VentasPeriodo({ consultar }) {
           <span className="sales-period-bar" aria-hidden="true"><span style={{ width: (maximo ? 100 * d[medida] / maximo : 0) + '%' }} /></span>
           <strong>{medida === 'ventas' ? pesos(d.ventas) : d.pedidos}</strong>
         </li>)}</ul>
+      </>}
+      <h4>Productos más vendidos</h4>
+      {resultado.productos.length === 0 ? <p>Sin unidades vendidas en este período.</p> : <>
+        <p>Unidades de pedidos pagados. Cada combo cuenta como producto.</p>
+        <ol className="sales-period-chart product-ranking" aria-label="Productos por unidades vendidas">
+          {resultado.productos.map(p => <li key={p.producto_id}>
+            <span>{p.nombre}</span>
+            <span className="sales-period-bar" aria-hidden="true"><span style={{ width: (100 * p.unidades / resultado.productos[0].unidades) + '%' }} /></span>
+            <strong>{p.unidades} {p.unidades === 1 ? 'unidad' : 'unidades'}</strong>
+          </li>)}
+        </ol>
       </>}
     </section>}
   </details>
