@@ -1071,3 +1071,10 @@
 .sales-period-chart li { display: grid; grid-template-columns: auto minmax(2rem,1fr) auto; gap: .75rem; align-items: center; padding: .4rem 0; font-variant-numeric: tabular-nums; }
 .sales-period-bar { height: .65rem; background: #e5e7eb; border-radius: .3rem; overflow: hidden; }
 .sales-period-bar > span { display: block; height: 100%; background: #216b59; }
+
+.stamp-card { max-width: 32rem; margin: 1rem auto; padding: 1.2rem; border: 1px solid #a7baad; border-radius: 1rem; background: #fff; color: #20372a; text-align: left; overflow-wrap: anywhere; }
+.stamp-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .6rem; margin: 1rem 0; }
+.stamp { aspect-ratio: 1; border: 2px dashed #849a89; border-radius: 50%; display: grid; place-items: center; color: #546359; }
+.stamp.filled { background: #e1eee4; color: #214e35; border: 2px solid #427453; font-weight: bold; overflow: hidden; }
+.stamp img { width: 100%; height: 100%; object-fit: contain; }
+.stamp-card p { white-space: pre-line; }

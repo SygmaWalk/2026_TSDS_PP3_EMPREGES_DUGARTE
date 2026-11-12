@@ -39,7 +39,7 @@ export function useCambiosSinGuardar(sucio){
   return()=>{guards.delete(confirmar);window.removeEventListener('beforeunload',antes)}
  },[sucio])
 }
-export const SECCIONES=[['pedidos','Pedidos','pedidos.ver'],['productos','Productos','productos.ver'],['stock','Inventario','stock.ver'],['clientes','Clientes','clientes.ver'],['apariencia','Tienda','tienda.configurar'],['entregas','Entregas','entregas.configurar']]
+export const SECCIONES=[['pedidos','Pedidos','pedidos.ver'],['productos','Productos','productos.ver'],['stock','Inventario','stock.ver'],['clientes','Clientes','clientes.ver'],['apariencia','Tienda','tienda.configurar'],['entregas','Entregas','entregas.configurar'],['sellos','Fidelización','tienda.configurar']]
 export const inicioNegocio=n=>SECCIONES.find(s=>n.permisos.includes(s[2]))?.[0]??'sin-acceso'
 export const rutaNegocio=(id,seccion,detalle='')=>'#/panel/'+id+'/'+seccion+(detalle?'/'+detalle:'')
 export function leerRuta(hash){const m=/^#\/panel\/(\d+)\/([a-z-]+)(?:\/(\d+))?(?:\?.*)?$/.exec(hash);return m?{id:Number(m[1]),seccion:m[2],detalle:m[3]?Number(m[3]):null}:null}

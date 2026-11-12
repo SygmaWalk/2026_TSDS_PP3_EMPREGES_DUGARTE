@@ -1,3 +1,5 @@
+import ProgramaSellos from '../cliente/ProgramaSellos.jsx'
+import MisTarjetones from '../cliente/MisTarjetones.jsx'
 import AdministracionNegocios from './AdministracionNegocios.jsx'
 import AdministracionCuentas from './AdministracionCuentas.jsx'
 import PanelNegocio from './PanelNegocio.jsx'
@@ -85,6 +87,7 @@ export default function Emprendimientos({ client, usuario }) {
     else if(seccion==='pedidos')contenido=<PanelPedidos client={client} usuarioId={usuario.id} negocio={negocio} rol={acceso.rol} email={usuario.email} onVolver={volver} avisosExternos/>
     else if(seccion==='stock')contenido=<PanelStock client={client} negocio={negocio} usuarioId={usuario.id} onVolver={volver}/>
     else if(seccion==='clientes')contenido=<PanelClientes client={client} negocio={negocio} usuarioId={usuario.id} onVolver={volver}/>
+    else if(seccion==='sellos')contenido=<ProgramaSellos client={client} negocio={negocio}/>
     else if(seccion==='apariencia')contenido=<EditorApariencia client={client} negocio={negocio} onVolver={volver}/>
     else contenido=<ConfigEntregas client={client} negocio={negocio} onVolver={volver}/>
     return <PanelNegocio key={negocio.id} client={client} usuario={usuario} acceso={acceso} negocio={negocio} seccion={seccion} onSalir={salir}><div key={seccion+':'+negocio.permisos.join(',')+(seccion==='pedidos'&&ruta.includes('?nuevos=')?ruta.split('?')[1]:'')}>{error&&<p role="alert">{error}</p>}{contenido}</div></PanelNegocio>
@@ -106,6 +109,7 @@ export default function Emprendimientos({ client, usuario }) {
         {!acceso ? <section className="access-state">{!error && <p role="status">Comprobando acceso…</p>}<button className="button button-secondary" onClick={() => setIntento(intento + 1)}>Reintentar</button></section> :
           !acceso.habilitada ? <section className="access-state" id="mi-acceso"><span className="state-icon" aria-hidden="true">⊘</span><h2>Acceso pendiente de habilitación</h2><p role="alert">Tu cuenta no está habilitada. Contactá al administrador del sistema.</p><p>Podés cerrar sesión e ingresar con otra cuenta.</p></section> :
             esCliente ? <>
+              <MisTarjetones key={usuario.id + '-sellos'} client={client} />
               <MisPedidos key={usuario.id} client={client} />
               <PerfilCliente client={client} usuario={usuario} />
             </> : <>
