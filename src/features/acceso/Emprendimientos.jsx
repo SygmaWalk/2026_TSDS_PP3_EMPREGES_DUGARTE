@@ -5,6 +5,7 @@ import {useRuta,leerRuta,navegar,rutaNegocio,inicioNegocio,SECCIONES,confirmarSa
 import EditorApariencia from '../apariencia/EditorApariencia.jsx'
 import PanelStock from '../stock/PanelStock.jsx'
 import PanelClientes from '../clientes/PanelClientes.jsx'
+import MisPedidos from '../cliente/MisPedidos.jsx'
 import PerfilCliente from '../cliente/PerfilCliente.jsx'
 import ConfigEntregas from '../entregas/ConfigEntregas.jsx'
 import PanelPedidos from '../pedidos/PanelPedidos.jsx'
@@ -105,6 +106,7 @@ export default function Emprendimientos({ client, usuario }) {
         {!acceso ? <section className="access-state">{!error && <p role="status">Comprobando acceso…</p>}<button className="button button-secondary" onClick={() => setIntento(intento + 1)}>Reintentar</button></section> :
           !acceso.habilitada ? <section className="access-state" id="mi-acceso"><span className="state-icon" aria-hidden="true">⊘</span><h2>Acceso pendiente de habilitación</h2><p role="alert">Tu cuenta no está habilitada. Contactá al administrador del sistema.</p><p>Podés cerrar sesión e ingresar con otra cuenta.</p></section> :
             esCliente ? <>
+              <MisPedidos key={usuario.id} client={client} />
               <PerfilCliente client={client} usuario={usuario} />
             </> : <>
               {esAdmin && <dl className="dashboard-stats"><div><dt>{esAdmin ? 'Emprendimientos del sistema' : 'Emprendimientos asignados'}</dt><dd>{acceso.negocios.length.toString().padStart(2, '0')}</dd></div><div><dt>Con acceso a productos</dt><dd>{acceso.negocios.filter(n => n.permisos.includes('productos.ver')).length.toString().padStart(2, '0')}</dd></div><div><dt>Estado de tu cuenta</dt><dd className="stat-active"><span />Habilitada</dd></div></dl>}
