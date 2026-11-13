@@ -3,21 +3,38 @@ import {cargarGoogleMaps} from './googleMaps.js'
 import {puntoValido} from './entregasRepository.js'
 const VACIAS=[]
 const coord=p=>({lat:p.latitud,lng:p.longitud})
-export default function MapaGoogle({punto,onChange,onDireccion,origen,radio,zonas=VACIAS,disabled=false,soloLectura=false}){
+export default function MapaGoogle({punto,onChange,onDireccion,origen,radio,zonas=VACIAS,disabled=false,soloLectura=false,dibujarZona=false}){
  const contenedor=useRef(null),buscador=useRef(null),api=useRef(null),mapa=useRef(null),eventos=useRef({}),elemento=useRef(null)
  const [listo,setListo]=useState(false),[error,setError]=useState(''),[lat,setLat]=useState(''),[lng,setLng]=useState('');const id=useId()
  const buscar=Boolean(onDireccion)&&!soloLectura
  useEffect(()=>{eventos.current={onChange,onDireccion,disabled:disabled||soloLectura};if(elemento.current)elemento.current.disabled=disabled},[onChange,onDireccion,disabled,soloLectura])
  useEffect(()=>{
-  let activo=true,click,observador,autocomplete,secuencia=0
+  let activo=true,click,inicioDibujo,finDibujo,observador,autocomplete,secuencia=0
   const fallo=()=>setError('Google Maps no está autorizado. Revisá la clave, las APIs habilitadas y los sitios permitidos.')
   window.addEventListener('empreges-maps-error',fallo)
   cargarGoogleMaps().then(async g=>{
    const [maps,marker]=await Promise.all([g.importLibrary('maps'),g.importLibrary('marker')]);if(!activo)return
    api.current={...maps,...marker,event:g.event}
-   const m=new maps.Map(contenedor.current,{center:{lat:-34.6037,lng:-58.3816},zoom:11,mapId:import.meta.env.VITE_GOOGLE_MAPS_MAP_ID||'DEMO_MAP_ID',mapTypeControl:false,streetViewControl:false,gestureHandling:'cooperative'})
+   const m=new maps.Map(contenedor.current,{center:{lat:-34.6037,lng:-58.3816},zoom:11,mapId:import.meta.env.VITE_GOOGLE_MAPS_MAP_ID||'DEMO_MAP_ID',clickableIcons:false,mapTypeControl:false,streetViewControl:false,gestureHandling:'cooperative'})
    mapa.current=m;setListo(true)
-   click=m.addListener('click',e=>{if(!eventos.current.disabled){secuencia++;eventos.current.onChange?.({latitud:Number(e.latLng.lat().toFixed(6)),longitud:Number(e.latLng.lng().toFixed(6))})}})
+   g.event.addListenerOnce(m,'idle',()=>{if(activo)contenedor.current.dataset.mapaListo='true'})
+   const seleccionar=e=>{
+    if(!e.latLng||eventos.current.disabled)return
+    secuencia++
+    eventos.current.onChange?.({latitud:Number(e.latLng.lat().toFixed(6)),longitud:Number(e.latLng.lng().toFixed(6))})
+   }
+   if(dibujarZona){
+    let inicio,ultimoPunto
+    inicioDibujo=m.addListener('mousedown',e=>{inicio=e.pixel})
+    finDibujo=m.addListener('mouseup',e=>{
+     if(inicio&&e.pixel&&Math.hypot(e.pixel.x-inicio.x,e.pixel.y-inicio.y)<6){ultimoPunto=e.latLng;seleccionar(e)}
+     inicio=null
+    })
+    click=m.addListener('click',e=>{
+     if(!ultimoPunto||!e.latLng?.equals(ultimoPunto))seleccionar(e)
+     ultimoPunto=null
+    })
+   }else click=m.addListener('click',seleccionar)
    observador=new ResizeObserver(()=>g.event.trigger(m,'resize'));observador.observe(contenedor.current)
    if(buscar){
     const {PlaceAutocompleteElement}=await g.importLibrary('places');if(!activo)return
@@ -32,8 +49,8 @@ export default function MapaGoogle({punto,onChange,onDireccion,origen,radio,zona
     })
    }
   }).catch(e=>{if(activo)setError(e.message)})
-  return()=>{activo=false;click?.remove();observador?.disconnect();autocomplete?.remove();elemento.current=null;if(mapa.current)window.google.maps.event.clearInstanceListeners(mapa.current);mapa.current=null;window.removeEventListener('empreges-maps-error',fallo)}
- },[buscar])
+  return()=>{activo=false;click?.remove();inicioDibujo?.remove();finDibujo?.remove();observador?.disconnect();autocomplete?.remove();elemento.current=null;if(mapa.current)window.google.maps.event.clearInstanceListeners(mapa.current);mapa.current=null;window.removeEventListener('empreges-maps-error',fallo)}
+ },[buscar,dibujarZona])
  useEffect(()=>{
   if(!listo||!mapa.current)return
   const g=api.current,m=mapa.current,figuras=[],marcas=[]
@@ -41,9 +58,14 @@ export default function MapaGoogle({punto,onChange,onDireccion,origen,radio,zona
   for(const [p,titulo] of [[origen,'Origen del emprendimiento'],[punto,'Punto seleccionado']])if(puntoValido(p))marcas.push(new g.AdvancedMarkerElement({map:m,position:coord(p),title:titulo}))
   if(puntoValido(origen)&&radio)figuras.push(new g.Circle({map:m,center:coord(origen),radius:radio,strokeColor:'#235f58',fillOpacity:.05,clickable:false}))
   if(soloLectura&&puntoValido(origen)&&puntoValido(punto)){const b=new window.google.maps.LatLngBounds();b.extend(coord(origen));b.extend(coord(punto));m.fitBounds(b,45)}
-  else if(puntoValido(punto??origen)){m.setCenter(coord(punto??origen));m.setZoom(14)}
+  else if(!dibujarZona && puntoValido(punto??origen)){m.setCenter(coord(punto??origen));m.setZoom(14)}
   return()=>{figuras.forEach(f=>f.setMap(null));marcas.forEach(m=>{m.map=null})}
- },[listo,punto,origen,radio,zonas,soloLectura])
+ },[listo,punto,origen,radio,zonas,soloLectura,dibujarZona])
+ useEffect(()=>{
+  if(listo && dibujarZona && mapa.current && puntoValido(origen)){
+   mapa.current.setCenter(coord(origen));mapa.current.setZoom(14)
+  }
+ },[listo,dibujarZona,origen])
  function ubicar(){const p={latitud:Number(lat.replace(',','.')),longitud:Number(lng.replace(',','.'))};if(!lat.trim()||!lng.trim()||!puntoValido(p)){setError('Ingresá coordenadas válidas.');return}onChange({latitud:Number(p.latitud.toFixed(6)),longitud:Number(p.longitud.toFixed(6))})}
  return <div className="map-selector">{buscar&&<div className="map-search" ref={buscador}/>}{!soloLectura&&<p className="field-help">Tocá el mapa para marcar el punto exacto. Revisá que coincida con la dirección escrita.</p>}<div className="delivery-map" ref={contenedor} aria-label={soloLectura?'Mapa de la entrega registrada':'Mapa para seleccionar ubicación'}/>
  {!soloLectura&&<><p>{punto?'Punto seleccionado: '+punto.latitud+', '+punto.longitud:'Todavía no seleccionaste un punto.'}</p><details><summary>Indicar coordenadas manualmente</summary><div className="coordinate-fields"><label htmlFor={id+'lat'}>Latitud<input id={id+'lat'} disabled={disabled} value={lat} onChange={e=>setLat(e.target.value)} inputMode="decimal"/></label><label htmlFor={id+'lng'}>Longitud<input id={id+'lng'} disabled={disabled} value={lng} onChange={e=>setLng(e.target.value)} inputMode="decimal"/></label><button className="button" type="button" disabled={disabled} onClick={ubicar}>Ubicar punto</button></div></details></>}{error&&<p role="alert">{error}</p>}</div>
