@@ -12,11 +12,15 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
-        node-version: lts/*
+        node-version: '24'
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+    - name: Start local Supabase for the browser tests
+      run: |
+        npx supabase start > /dev/null
+        npx supabase status -o json | jq -r '"VITE_SUPABASE_URL=\(.API_URL)", "VITE_SUPABASE_PUBLISHABLE_KEY=\(.PUBLISHABLE_KEY // .ANON_KEY)"' >> "$GITHUB_ENV"
     - name: Run Playwright tests
       run: npx playwright test
     - uses: actions/upload-artifact@v4
