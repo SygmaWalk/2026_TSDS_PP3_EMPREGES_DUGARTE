@@ -1,3 +1,4 @@
+import ResumenNegocio from './ResumenNegocio.jsx'
 import ProgramaSellos from '../cliente/ProgramaSellos.jsx'
 import MisTarjetones from '../cliente/MisTarjetones.jsx'
 import AdministracionNegocios from './AdministracionNegocios.jsx'
@@ -83,6 +84,7 @@ export default function Emprendimientos({ client, usuario }) {
     const seccion=destino.seccion,permiso=SECCIONES.find(s=>s[0]===seccion)?.[2],volver=()=>navegar(rutaNegocio(negocio.id,inicioNegocio(negocio)))
     let contenido
     if(!permiso||!negocio.permisos.includes(permiso))contenido=<main className="app-shell"><h1>Sección no disponible</h1><p role="alert">No tenés acceso a esta sección.</p></main>
+    else if(seccion==='resumen')contenido=<ResumenNegocio client={client} negocio={negocio} onAbrir={id=>navegar(rutaNegocio(negocio.id,id))}/>
     else if(seccion==='productos')contenido=<CatalogoAdministrable client={client} negocio={negocio} onVolver={volver}/>
     else if(seccion==='pedidos')contenido=<PanelPedidos client={client} usuarioId={usuario.id} negocio={negocio} rol={acceso.rol} email={usuario.email} onVolver={volver} avisosExternos/>
     else if(seccion==='stock')contenido=<PanelStock client={client} negocio={negocio} usuarioId={usuario.id} onVolver={volver}/>

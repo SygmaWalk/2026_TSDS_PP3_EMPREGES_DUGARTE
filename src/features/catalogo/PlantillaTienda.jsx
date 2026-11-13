@@ -37,8 +37,8 @@ export default function PlantillaTienda({negocio,usuario,publicada,children,clie
    <div className="shop-identity-cover"><ImagenIdentidad key={'portada:'+config.portadaUrl} src={config.portadaUrl} ruta={config.portadaPath} archivo={config.portadaArchivo} client={client} nombre={negocio.nombre} tipo="portada"/></div>
    <div className="store-container shop-identity-heading">
     <div className="shop-identity-logo"><ImagenIdentidad key={'logo:'+config.logoUrl} src={config.logoUrl} ruta={config.logoPath} archivo={config.logoArchivo} client={client} nombre={negocio.nombre} tipo="logo"/></div>
-    <div className="shop-identity-title"><span className="shop-identity-label">TIENDA ONLINE</span><h1>{negocio.nombre}</h1><p>Productos y pedidos directamente con el emprendimiento.</p></div>
-    <span className="shop-guest-label">Confirmá con tu cuenta de cliente</span>
+    <div className="shop-identity-title"><h1>{negocio.nombre}</h1></div>
+    
    </div>
   </section>}
   <div id="store-main-content" tabIndex={-1}>{children}</div>

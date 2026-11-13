@@ -1,53 +1,69 @@
 import { useEffect, useState } from 'react'
-import { Marca } from './InterfazAcceso.jsx'
+import { formatearCentavos } from '../carrito/carrito.js'
 
-export default function ResumenNegocio({ client, negocio, onVolver, onAbrir }) {
+const formatoDia = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' })
+const diaCorto = new Intl.DateTimeFormat('es-AR', { weekday: 'short', timeZone: 'UTC' })
+const moneda = pesos => formatearCentavos(Math.round(100 * Number(pesos)))
+
+function ultimaSemana() {
+  const hoy = new Date(formatoDia.format(Date.now()) + 'T12:00:00Z')
+  return Array.from({ length: 7 }, (_, i) => {
+    const fecha = new Date(hoy)
+    fecha.setUTCDate(hoy.getUTCDate() - 6 + i)
+    return { dia: formatoDia.format(fecha), etiqueta: diaCorto.format(fecha) }
+  })
+}
+
+export default function ResumenNegocio({ client, negocio, onAbrir }) {
   const [datos, setDatos] = useState(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(false)
   const [intento, setIntento] = useState(0)
-  const puedeProductos = negocio.permisos.includes('productos.ver')
-  const puedePedidos = negocio.permisos.includes('pedidos.ver')
   useEffect(() => {
     let vigente = true
+    const actualizar = () => setIntento(i => i + 1)
     async function cargar() {
-      setDatos(null); setError('')
+      const semana = ultimaSemana()
+      const contar = estado => client.from('pedidos').select('id', {head:true,count:'exact'})
+        .eq('emprendimiento_id', negocio.id).eq('estado', estado)
       try {
-        const contar = async (tabla, columna, valor) => {
-          let q = client.from(tabla).select('id', { count: 'exact', head: true }).eq('emprendimiento_id', negocio.id)
-          if (columna) q = q.eq(columna, valor)
-          const r = await q
-          if (r.error) throw r.error
-          return r.count
-        }
-        const [productos, visibles, pedidos, pendientes] = await Promise.all([
-          puedeProductos ? contar('productos') : null, puedeProductos ? contar('productos', 'visible', true) : null,
-          puedePedidos ? contar('pedidos') : null, puedePedidos ? contar('pedidos', 'estado', 'Pendiente') : null,
+        const [pendientes, preparando, ventas] = await Promise.all([
+          contar('Pendiente'), contar('En preparación'), client.rpc('ventas_por_periodo', {
+            p_negocio: negocio.id, p_desde: semana[0].dia, p_hasta: semana[6].dia,
+          }),
         ])
-        if (vigente) setDatos({ productos, visibles, pedidos, pendientes })
-      } catch { if (vigente) setError('No pudimos cargar el resumen. Podés reintentar o entrar a una sección.') }
+        if (pendientes.error || preparando.error || ventas.error) throw Error()
+        const dias = semana.map(d => ({ ...d, ventas: Number(ventas.data.find(f => f.dia === d.dia)?.ventas ?? 0) }))
+        if (vigente) {
+          setDatos({ pendientes: pendientes.count, preparando: preparando.count, dias })
+          setError(false)
+        }
+      } catch { if (vigente) setError(true) }
     }
     cargar()
-    return () => { vigente = false }
-  }, [client, negocio.id, puedeProductos, puedePedidos, intento])
-  const acciones = [
-    ['tienda.configurar', 'apariencia', 'Identidad de la tienda', 'Personalizar tienda'],
-    ['pedidos.ver', 'pedidos', 'Pedidos', 'Consultar pedidos'],
-    ['productos.ver', 'productos', 'Productos', 'Gestionar productos'],
-    ['stock.ver', 'stock', 'Inventario', 'Gestionar inventario'],
-    ['clientes.ver', 'clientes', 'Clientes', 'Consultar clientes'],
-    ['entregas.configurar', 'entregas', 'Entregas', 'Configurar entregas'],
-  ]
-  return <main className="dashboard-page business-platform">
-    <header className="dashboard-topbar"><a className="store-brand" href="#/"><Marca /></a><button className="button button-outline" onClick={onVolver}>Mis emprendimientos</button></header>
-    <div className="business-overview"><div className="overview-breadcrumb">Mi espacio <span>/</span> {negocio.nombre}</div>
-      <section className="overview-hero"><div><h1>{negocio.nombre}</h1></div><div className="overview-store-link"><span className={'business-status ' + (!negocio.activo ? 'business-inactive' : '')}>{negocio.activo ? 'Tienda activa' : 'Tienda inactiva'}</span>{negocio.activo && negocio.slug && <a className="button button-primary" href={'#/tienda/' + negocio.slug}>Ver mi tienda ↗</a>}</div></section>
-      <div className="section-heading"><div><h2>Actividad</h2></div><button className="button button-outline" onClick={() => setIntento(v => v + 1)}>Actualizar resumen</button></div>
-      {error ? <p role="alert" className="error-feedback">{error}</p> : !datos ? <p role="status">Cargando resumen…</p> : <dl className="overview-metrics">
-        {puedeProductos && <><div><dt>Productos registrados</dt><dd>{datos.productos}</dd><small>Tu catálogo completo</small></div><div><dt>Productos publicados</dt><dd>{datos.visibles}</dd><small>{negocio.activo ? 'Visibles en tu tienda' : 'Tienda inactiva: no se muestran al público'}</small></div></>}
-        {puedePedidos && <><div><dt>Pedidos recibidos</dt><dd>{datos.pedidos}</dd><small>Total de pedidos registrados</small></div><div className="metric-highlight"><dt>Pedidos pendientes</dt><dd>{datos.pendientes}</dd><small>Con estado Pendiente</small></div></>}
-      </dl>}
-      <div className="overview-actions">{acciones.filter(a => negocio.permisos.includes(a[0])).map((a) => <article key={a[0]}><h2>{a[2]}</h2><button className="button button-secondary" onClick={() => onAbrir(a[1])}>{a[3]} ↗</button></article>)}</div>
-
-    </div>
+    window.addEventListener('empreges:pedidos', actualizar)
+    window.addEventListener('focus', actualizar)
+    return () => { vigente = false; window.removeEventListener('empreges:pedidos', actualizar); window.removeEventListener('focus', actualizar) }
+  }, [client, negocio.id, intento])
+  const max = Math.max(1, ...(datos?.dias ?? []).map(d => d.ventas))
+  return <main className="merchant-overview">
+    <header className="merchant-heading"><div><h1>Resumen del negocio</h1>
+      {datos && <p>{new Intl.DateTimeFormat('es-AR', {dateStyle:'full', timeZone:'UTC'}).format(new Date(datos.dias[6].dia + 'T12:00:00Z'))}</p>}</div>
+      <button className="button button-secondary" onClick={() => setIntento(i => i + 1)}>Actualizar resumen</button>
+    </header>
+    {error ? <p role="alert">No se pudo cargar la actividad. Usá Actualizar resumen para reintentar.</p> :
+      !datos ? <p role="status">Cargando actividad…</p> : <div className="merchant-grid">
+        <section className="merchant-queue"><h2>Pedidos pendientes</h2><strong>{datos.pendientes}</strong>
+          <p>{datos.preparando} en preparación</p>
+          <button className="button" onClick={() => onAbrir('pedidos')}>Abrir pedidos →</button>
+        </section>
+        <section className="merchant-sales"><h2>Ventas de los últimos 7 días</h2>
+          <strong>{moneda(datos.dias.reduce((n,d) => n + d.ventas, 0))}</strong>
+          <p>Pedidos cobrados por fecha de creación</p>
+          <ol className="merchant-chart">{datos.dias.map(d => <li key={d.dia}>
+            <small>{moneda(d.ventas)}</small><span aria-hidden="true"><i style={{height: (100*d.ventas/max)+'%'}} /></span>
+            <time dateTime={d.dia}>{d.etiqueta}</time>
+          </li>)}</ol>
+        </section>
+      </div>}
   </main>
 }

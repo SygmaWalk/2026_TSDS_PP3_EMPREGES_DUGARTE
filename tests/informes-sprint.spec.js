@@ -45,6 +45,8 @@ test('el emprendimiento consulta importes históricos por zona y cambia el perí
     await page.getByLabel('Correo electrónico').fill(email)
     await page.getByLabel('Contraseña', { exact:true }).fill(password)
     await page.getByRole('button', { name:'Ingresar', exact:true }).click()
+    await expect(page.getByRole('heading', { name:'Resumen del negocio' })).toBeVisible()
+    await page.getByRole('button', { name:'Abrir pedidos' }).click()
     await page.getByRole('heading', { name:'Pedidos', exact:true }).waitFor()
     await page.getByText('Ventas y pedidos por período', { exact:true }).click()
     await page.getByLabel('Desde (informe)').fill('2026-11-10')

@@ -15,7 +15,17 @@ export default function PanelNegocio({client,usuario,acceso,negocio,seccion,onSa
  <header className="business-header tw:flex tw:items-center tw:justify-between tw:gap-4 tw:px-5 tw:py-3"><Marca/><button className="button button-outline mobile-menu" aria-expanded={menu} aria-controls="business-sidebar" onClick={()=>setMenu(!menu)}>Menú</button><div className="tw:flex tw:items-center tw:gap-3"><span className="business-account">{usuario.email}</span><button className="button button-outline" onClick={onSalir}>Cerrar sesión</button></div></header>
  <aside id="business-sidebar" className={'business-sidebar '+(menu?'is-open':'')} aria-label="Navegación del emprendimiento">
  <label htmlFor="negocio-actual">Emprendimiento</label><select id="negocio-actual" value={negocio.id} onChange={e=>{const n=acceso.negocios.find(n=>String(n.id)===e.target.value);if(navegar(rutaNegocio(n.id,inicioNegocio(n))))setMenu(false)}}>{acceso.negocios.map(n=><option key={n.id} value={n.id}>{n.nombre}{n.activo?'':' (inactivo)'}</option>)}</select>
- <nav className="tw:flex tw:flex-col tw:gap-2">{SECCIONES.filter(s=>negocio.permisos.includes(s[2])).map(([id,titulo])=><a key={id} href={rutaNegocio(negocio.id,id)} onClick={e=>enlace(e,rutaNegocio(negocio.id,id))} aria-current={id===seccion?'page':undefined}>{titulo}</a>)}</nav>
+ <nav aria-label="Secciones del panel">{[
+   ['Operación', ['resumen','pedidos','entregas']],
+   ['Catálogo', ['productos','stock']],
+   ['Mi negocio', ['clientes','sellos','apariencia']],
+ ].map(([grupo,ids]) => {
+   const enlaces = ids.map(id => SECCIONES.find(s => s[0] === id)).filter(s => negocio.permisos.includes(s[2]))
+   return enlaces.length > 0 && <div className="merchant-nav-group" key={grupo}>
+     <span>{grupo}</span>{enlaces.map(([id,titulo]) => <a key={id} href={rutaNegocio(negocio.id,id)}
+       onClick={e=>enlace(e,rutaNegocio(negocio.id,id))} aria-current={id===seccion?'page':undefined}>{titulo}</a>)}
+   </div>
+ })}</nav>
  <div className="sidebar-bottom">{negocio.activo&&<a href={'#/tienda/'+negocio.slug} target="_blank" rel="noreferrer">Ver tienda pública ↗</a>}{acceso.rol==='administrador'&&<a href="#/cuenta" onClick={e=>enlace(e,'#/cuenta')}>Administración</a>}</div>
  </aside>
  <div className="business-body"><div className="business-context"><strong>{negocio.nombre}</strong>{!negocio.activo&&<span>Tienda inactiva</span>}</div>
