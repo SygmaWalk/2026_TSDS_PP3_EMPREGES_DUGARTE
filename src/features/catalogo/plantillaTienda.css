@@ -70,3 +70,20 @@ html[data-theme=dark] .storefront-template {
 .cart-receipt li span { overflow-wrap:anywhere; min-width:0; }
 @media(min-width:851px){ .storefront-template .store-cart-summary { position:sticky; top:5rem; align-self:start; } }
 @media(max-width:850px){ .storefront-template .store-navigation:not([hidden]) { position:sticky; top:0; z-index:8; background:var(--surface); border-radius:0 0 .75rem .75rem; padding:.4rem .6rem; gap:.25rem .8rem; } }
+
+/* Cards without photography use their space for the product and its action. */
+.storefront-template .catalog-store .preview-grid > li {
+  padding: clamp(1rem, 2vw, 1.5rem);
+  gap: .8rem;
+  line-height: 1.5;
+}
+.storefront-template .catalog-store .preview-list > li:not(:has(.product-image)) {
+  grid-template-columns: minmax(0,1fr);
+}
+.storefront-template .catalog-store .preview-list > li:not(:has(.product-image)) > * { grid-column: 1; }
+.storefront-template .catalog-store .preview-grid > li > strong { line-height: 1.3; }
+.storefront-template .catalog-store .preview-grid > li > p { margin: 0; }
+.storefront-template .store-skip:not(:focus-visible) {
+  clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; padding: 0; border: 0;
+}
+.storefront-template .store-skip:focus-visible { top: .75rem; }

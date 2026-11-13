@@ -53,3 +53,8 @@ html[data-theme=dark] .discovery-steps>div>span{color:#e7bd8f}
 /* Los controles de Leaflet están sobre un mapa que conserva su paleta clara. */
 html[data-theme=dark] .leaflet-container :is(a,p,span){color:#24527a}
 html[data-theme=dark] .leaflet-popup-content{color:#241c18}
+
+/* En pantallas chicas, el cambio de tema ocupa su propio lugar al pie. */
+@media (max-width: 800px) {
+  .theme-toggle { position: static; margin: 1rem 1rem max(1rem,env(safe-area-inset-bottom)) auto; box-shadow: none; }
+}

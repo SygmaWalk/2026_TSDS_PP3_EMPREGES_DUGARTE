@@ -113,3 +113,65 @@ html[data-theme=dark] .business-app { background: var(--surface); }
 html[data-theme=dark] .merchant-heading { color: var(--text); }
 html[data-theme=dark] .merchant-sales { background: #1b322c; color: #fafdf8; }
 html[data-theme=dark] .merchant-sales p { color: #b6cbbd; }
+
+/* Spacing shared by the merchant's disclosures and form panels. */
+.business-section {
+  --panel-inset: clamp(1rem, 2vw, 1.75rem);
+  --section-gap: clamp(1rem, 2vw, 1.5rem);
+}
+.business-section .orders-advanced {
+  margin-block: .75rem;
+  padding-inline: var(--panel-inset);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+.business-section .orders-advanced > summary {
+  padding-block: 1rem;
+  line-height: 1.5;
+}
+.business-section .orders-advanced[open] { padding-bottom: var(--panel-inset); }
+.business-section .orders-advanced[open] > summary { border-bottom: 1px solid var(--border); }
+.business-section .orders-advanced .orders-filters {
+  margin: 0;
+  padding: var(--section-gap) 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  gap: 1rem;
+}
+.business-section .orders-advanced .orders-filters > label,
+.business-section .loyalty-settings label:has(textarea),
+.business-section .loyalty-settings label:has(input:not([type=checkbox])) {
+  display: grid;
+  gap: .5rem;
+  min-width: 0;
+}
+.business-section .orders-advanced input[type=date],
+.business-section .loyalty-settings :is(textarea,input:not([type=checkbox])) {
+  font: inherit;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: .625rem;
+  padding: .65rem .85rem;
+}
+.business-section .orders-advanced > p { max-width: 75ch; margin: 0; line-height: 1.65; }
+.business-section .orders-advanced section > h4 { border-top: 1px solid var(--border); padding-top: var(--section-gap); margin: var(--section-gap) 0 .75rem; }
+.business-section .orders-shell > section[aria-label="Pedidos recibidos"] { margin-top: var(--section-gap); }
+.business-section .loyalty-settings > form {
+  padding: var(--panel-inset);
+  margin-block: var(--section-gap);
+  display: grid;
+  gap: 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+.business-section .loyalty-settings > form > h2 { margin: 0; }
+.business-section .loyalty-settings textarea { min-height: 6rem; resize: vertical; }
+.business-section .loyalty-settings .button { justify-self: start; }
+.business-body .merchant-heading { padding-block: .75rem var(--section-gap, 1.5rem); }
+.business-body .merchant-grid section { padding: clamp(1.35rem, 2.6vw, 2.25rem); }

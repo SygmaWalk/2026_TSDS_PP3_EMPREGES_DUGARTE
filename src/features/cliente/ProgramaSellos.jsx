@@ -36,7 +36,7 @@ export default function ProgramaSellos({ client, negocio }) {
     } catch { setError(canjear ? 'No se pudo canjear. Revisá el código y si ya fue utilizado.' : 'No se pudo guardar el programa.') }
     finally { setOcupado(false) }
   }
-  return <main className="app-shell"><h1>Tarjetón de fidelización</h1>
+  return <main className="app-shell loyalty-settings"><h1>Tarjetón de fidelización</h1>
     <p>Cada compra pagada y entregada suma un sello. Al décimo, el cliente recibe el beneficio definido por tu local.</p>
     {error && <p role="alert">{error}</p>}{mensaje && <p role="status">{mensaje}</p>}
     {!config ? error ? <button className="button" onClick={() => { setError(''); setIntento(i => i+1) }}>Reintentar</button> : <p>Cargando…</p> :
