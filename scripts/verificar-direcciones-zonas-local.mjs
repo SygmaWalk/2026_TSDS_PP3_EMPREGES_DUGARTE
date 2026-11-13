@@ -62,7 +62,7 @@ try{
  await page.getByLabel('Dirección de entrega',{exact:true}).waitFor()
  await page.waitForFunction(()=>document.querySelector('#envio-direccion')?.value==='Obelisco, Buenos Aires')
  assert.notEqual(await page.getByLabel('Mis direcciones guardadas',{exact:true}).inputValue(),'')
- await page.getByRole('button',{name:'Calcular envío',exact:true}).click();await page.getByText(/Dentro de cobertura · Centro QA/).waitFor()
+ await page.getByText(/Dentro de cobertura · Centro QA/).waitFor()
  await page.getByRole('button',{name:'Confirmar pedido',exact:true}).click();await page.getByRole('heading',{name:'Tu pedido quedó registrado',exact:true}).waitFor()
  const pedido=data(await admin.from('pedidos').select('*').eq('emprendimiento_id',negocio.id).single())
  assert.equal(Number(pedido.costo_envio),150);assert.equal(Number(pedido.total),1150);assert.equal(pedido.entrega.franja,'Centro QA');assert.equal(pedido.entrega.direccion,'Obelisco, Buenos Aires')
