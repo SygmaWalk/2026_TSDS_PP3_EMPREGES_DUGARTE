@@ -1079,3 +1079,4 @@
 .stamp img { width: 100%; height: 100%; object-fit: contain; }
 .stamp-card p { white-space: pre-line; }
 .product-ranking li { grid-template-columns: minmax(0, 2fr) minmax(2rem, 3fr) auto; overflow-wrap: anywhere; }
+.zone-report { overflow-x: auto; } .zone-report table { width: 100%; border-collapse: collapse; } .zone-report th, .zone-report td { padding: .5rem; text-align: right; } .zone-report th:first-child { text-align: left; } .zone-report small { display: block; }

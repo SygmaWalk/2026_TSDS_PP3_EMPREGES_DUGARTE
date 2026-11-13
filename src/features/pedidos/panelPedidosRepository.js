@@ -30,7 +30,7 @@ export function crearPanelPedidosRepository(client, negocioId, usuarioId) {
   return {
     async informeVentasPorPeriodo(desde, hasta) {
       intervaloFechas(desde, hasta)
-      const { data, error } = await client.rpc('informe_ventas_por_periodo', { p_negocio: negocioId, p_desde: desde, p_hasta: hasta })
+      const { data, error } = await client.rpc('informe_ventas_con_zonas', { p_negocio: negocioId, p_desde: desde, p_hasta: hasta })
       if (error) throw error
       return data
     },

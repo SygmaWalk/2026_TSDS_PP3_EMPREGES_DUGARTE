@@ -20,8 +20,8 @@ export default function VentasPeriodo({ consultar }) {
     setResultado(null)
     setOcupado(true)
     try {
-      const { dias, productos } = await consultar(desde, hasta)
-      setResultado({ dias, productos, desde, hasta })
+      const { dias, productos, zonas } = await consultar(desde, hasta)
+      setResultado({ dias, productos, zonas, desde, hasta })
     } catch {
       setError('No se pudo consultar el período. Revisá las fechas y volvé a intentar.')
     } finally {
@@ -64,6 +64,19 @@ export default function VentasPeriodo({ consultar }) {
           </li>)}
         </ol>
       </>}
+      <h4>Ventas por zona</h4>
+      <p>Importes de todos los pedidos sin cancelar, incluidos los pendientes de cobro. La zona corresponde a la entrega guardada en cada pedido.</p>
+      {resultado.zonas.length === 0 ? <p>Sin zonas configuradas ni pedidos en este período.</p> :
+        <div className="zone-report"><table aria-label="Ventas por zona">
+          <thead><tr>{['Zona', 'Pedidos', 'Productos', 'Envío', 'Total'].map(t => <th key={t} scope="col">{t}</th>)}</tr></thead>
+          <tbody>{resultado.zonas.map(z => <tr key={JSON.stringify([z.tipo,z.nombre,z.limites])}>
+            <th scope="row">{z.nombre}
+              {z.tipo === 'radio' && z.limites?.every(n => n != null) && <small>{z.limites.join(' a ')} m</small>}
+              {z.tipo === 'zona' && z.limites && resultado.zonas.some(otra => otra !== z && otra.nombre === z.nombre) &&
+                <small>{z.limites.sur}, {z.limites.oeste} – {z.limites.norte}, {z.limites.este}</small>}
+            </th><td>{z.pedidos}</td><td>{pesos(z.productos)}</td><td>{pesos(z.envio)}</td><td>{pesos(z.total)}</td>
+          </tr>)}</tbody>
+        </table></div>}
     </section>}
   </details>
 }
