@@ -1,3 +1,4 @@
+import PortadaLocal from '../catalogo/PortadaLocal.jsx'
 import { useState } from 'react'
 import { useCambiosSinGuardar } from '../../navigation.js'
 
@@ -79,7 +80,7 @@ export default function AdministracionNegocios({ client, negocios, actualizar, a
     {mensaje && <p role="status">{mensaje}</p>}
     {editor ? <FormularioNegocio client={client} negocio={editor.negocio} onCancelar={() => setEditor(null)} onGuardado={guardado}/> :
       <div className="business-grid">{negocios.map(negocio => <article className="business-card" key={negocio.id}>
-        <h3>{negocio.nombre}</h3><p>{negocio.activo ? 'Activo' : 'Inactivo'}</p>
+        <PortadaLocal client={client} negocio={negocio}/><h3>{negocio.nombre}</h3><p>{negocio.activo ? 'Activo' : 'Inactivo'}</p>
         <button className="button" onClick={() => abrir(negocio)}>Editar {negocio.nombre}</button>
         <button className="button button-primary" onClick={() => abrirPanel(negocio)}>Abrir panel de {negocio.nombre}</button>
       </article>)}</div>}

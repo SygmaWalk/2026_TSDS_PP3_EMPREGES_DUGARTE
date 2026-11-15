@@ -1,3 +1,4 @@
+import PortadaLocal from '../catalogo/PortadaLocal.jsx'
 import ResumenNegocio from './ResumenNegocio.jsx'
 import ProgramaSellos from '../cliente/ProgramaSellos.jsx'
 import MisTarjetones from '../cliente/MisTarjetones.jsx'
@@ -9,6 +10,8 @@ import EditorApariencia from '../apariencia/EditorApariencia.jsx'
 import PanelStock from '../stock/PanelStock.jsx'
 import PanelClientes from '../clientes/PanelClientes.jsx'
 import MisPedidos from '../cliente/MisPedidos.jsx'
+import '../cliente/cuenta.css'
+import fotoCuenta from '../../assets/mesa-cliente.jpg'
 import PerfilCliente from '../cliente/PerfilCliente.jsx'
 import ConfigEntregas from '../entregas/ConfigEntregas.jsx'
 import PanelPedidos from '../pedidos/PanelPedidos.jsx'
@@ -97,28 +100,37 @@ export default function Emprendimientos({ client, usuario }) {
   const titulo = !acceso?.habilitada ? 'Acceso a tu cuenta' : acceso.rol === 'cliente' ? 'Mi cuenta de cliente' : acceso.rol === 'administrador' ? 'Administración del sistema' : 'Mis emprendimientos'
   const esAdmin = acceso?.rol === 'administrador'
   const esCliente = acceso?.rol === 'cliente'
-  return <main className="dashboard-page business-platform">
+  return <main className={`dashboard-page business-platform${esCliente && acceso.habilitada ? ' customer-dashboard' : ' management-dashboard'}`}>
     <header className="dashboard-topbar"><a className="store-brand" href="#/"><Marca /></a><div className="topbar-account"><span className="account-avatar" aria-hidden="true">{usuario.email?.[0]?.toUpperCase() ?? 'U'}</span><span className="account-email">{usuario.email}</span><button className="button button-outline" disabled={ocupado} onClick={salir}>Cerrar sesión</button></div></header>
     <div className="dashboard-layout">
-      <aside className="dashboard-sidebar" aria-label="Tu espacio"><p className="sidebar-label">TU ESPACIO</p><a className={ruta.startsWith("#/admin/") ? undefined : "sidebar-current"} href="#/cuenta"><span aria-hidden="true">▦</span> Resumen</a>{acceso?.habilitada && !esCliente && <a href={esAdmin ? "#/admin/emprendimientos" : "#/cuenta"} aria-current={ruta === "#/admin/emprendimientos" ? "page" : undefined}><span aria-hidden="true">▤</span> Emprendimientos</a>}{esAdmin && acceso?.habilitada && <a href="#/admin/usuarios" className={ruta === "#/admin/usuarios" ? "sidebar-current" : undefined} aria-current={ruta === "#/admin/usuarios" ? "page" : undefined}>Usuarios y permisos</a>}<a href="#/emprendimientos"><span aria-hidden="true">↗</span> Explorar tiendas</a>{esCliente && <a href="#/cuenta"><span aria-hidden="true">◎</span> Mi perfil</a>}</aside>
+      <aside className="dashboard-sidebar" aria-label="Tu espacio"><p className="sidebar-label">TU ESPACIO</p><a className={ruta.startsWith("#/admin/") ? undefined : "sidebar-current"} href="#/cuenta"><span aria-hidden="true">▦</span> Resumen</a>{acceso?.habilitada && !esCliente && <a href={esAdmin ? "#/admin/emprendimientos" : "#/cuenta"} aria-current={ruta === "#/admin/emprendimientos" ? "page" : undefined}><span aria-hidden="true">▤</span> Emprendimientos</a>}{esAdmin && acceso?.habilitada && <a href="#/admin/usuarios" className={ruta === "#/admin/usuarios" ? "sidebar-current" : undefined} aria-current={ruta === "#/admin/usuarios" ? "page" : undefined}>Usuarios y permisos</a>}<a href="#/emprendimientos"><span aria-hidden="true">↗</span> Explorar tiendas</a>{esCliente && acceso.habilitada && <button type="button" className="profile-shortcut" onClick={() => document.getElementById('mi-perfil')?.focus()}><span aria-hidden="true">◎</span> Mi perfil</button>}</aside>
       <div className="dashboard-content" id="resumen">
         {esAdmin && acceso?.habilitada && ruta === '#/admin/usuarios' ? <AdministracionCuentas client={client} negocios={acceso.negocios}/> : esAdmin && acceso?.habilitada && ruta === '#/admin/emprendimientos' ? <AdministracionNegocios client={client} negocios={acceso.negocios} actualizar={() => setIntento(i => i + 1)} abrirPanel={n => navegar(rutaNegocio(n.id,inicioNegocio(n)))}/> : <>
-        <section className={'welcome-panel welcome-' + (acceso?.habilitada ? acceso.rol : 'inactiva')}>
+        {esCliente && acceso.habilitada ? <header className="customer-hero">
+          <div className="customer-hero-copy">
+            <h1>{titulo}</h1>
+            <p>Revisá tus compras, tus sellos y las direcciones que usás al pedir.</p>
+            <a className="button button-primary" href="#/emprendimientos">Explorar tiendas <span aria-hidden="true">↗</span></a>
+          </div>
+          <img src={fotoCuenta} alt="" width="900" height="600" />
+        </header> : <section className={'welcome-panel welcome-' + (acceso?.habilitada ? acceso.rol : 'inactiva')}>
           <div><InsigniaRol rol={acceso?.rol} habilitada={acceso ? acceso.habilitada : true} /><h1>{titulo}</h1><p>{!acceso ? 'Estamos preparando tu espacio.' : !acceso.habilitada ? 'Necesitás una cuenta habilitada para continuar.' : esAdmin ? 'Una vista central de los emprendimientos, sus productos y pedidos.' : esCliente ? 'Este es tu espacio personal en EmpreGest.' : 'Elegí un emprendimiento para consultar sus productos y pedidos.'}</p></div>
-          <span className="welcome-monogram" aria-hidden="true">{esAdmin ? 'A' : esCliente ? 'C' : 'E'}<span>.</span></span>
-        </section>
+          {esAdmin && acceso.habilitada && <a className="button button-primary" href="#/admin/usuarios">Gestionar permisos</a>}
+        </section>}
         {error && <p role="alert" className="error-feedback">{error}</p>}
         {!acceso ? <section className="access-state">{!error && <p role="status">Comprobando acceso…</p>}<button className="button button-secondary" onClick={() => setIntento(intento + 1)}>Reintentar</button></section> :
           !acceso.habilitada ? <section className="access-state" id="mi-acceso"><span className="state-icon" aria-hidden="true">⊘</span><h2>Acceso pendiente de habilitación</h2><p role="alert">Tu cuenta no está habilitada. Contactá al administrador del sistema.</p><p>Podés cerrar sesión e ingresar con otra cuenta.</p></section> :
             esCliente ? <>
-              <MisTarjetones key={usuario.id + '-sellos'} client={client} />
-              <MisPedidos key={usuario.id} client={client} />
+              <div className="customer-activity">
+                <MisPedidos key={usuario.id} client={client} />
+                <MisTarjetones key={usuario.id + '-sellos'} client={client} />
+              </div>
               <PerfilCliente client={client} usuario={usuario} />
             </> : <>
-              {esAdmin && <dl className="dashboard-stats"><div><dt>{esAdmin ? 'Emprendimientos del sistema' : 'Emprendimientos asignados'}</dt><dd>{acceso.negocios.length.toString().padStart(2, '0')}</dd></div><div><dt>Con acceso a productos</dt><dd>{acceso.negocios.filter(n => n.permisos.includes('productos.ver')).length.toString().padStart(2, '0')}</dd></div><div><dt>Estado de tu cuenta</dt><dd className="stat-active"><span />Habilitada</dd></div></dl>}
+              {esAdmin && <dl className="dashboard-stats"><div><dt>{esAdmin ? 'Emprendimientos del sistema' : 'Emprendimientos asignados'}</dt><dd>{acceso.negocios.length.toString().padStart(2, '0')}</dd></div><div><dt>Tiendas activas</dt><dd>{acceso.negocios.filter(n => n.activo).length}</dd></div><div><dt>Tiendas inactivas</dt><dd>{acceso.negocios.filter(n => !n.activo).length}</dd></div></dl>}
               <section id="emprendimientos"><div className="section-heading"><div><span className="eyebrow">{esAdmin ? 'VISTA GENERAL' : 'TUS NEGOCIOS'}</span><h2>{esAdmin ? 'Emprendimientos' : 'Emprendimientos'}</h2></div><span className="section-count">{acceso.negocios.length} {acceso.negocios.length === 1 ? 'emprendimiento' : 'emprendimientos'}</span></div>
                 {acceso.negocios.length === 0 ? <div className="access-state"><h3>Tu espacio está listo</h3>{esAdmin ? <a className="button button-primary" href="#/admin/emprendimientos">Administrar emprendimientos</a> : <p>No tenés emprendimientos asignados. Contactá al administrador.</p>}</div> :
-                  <div className="business-grid">{acceso.negocios.map(n=><article className="business-card" key={n.id}><h3>{n.nombre}</h3><p>{n.activo?'Activo':'Inactivo'}</p><button className="button button-primary" onClick={()=>navegar(rutaNegocio(n.id,inicioNegocio(n)))}>Abrir panel de {n.nombre}</button></article>)}</div>}
+                  <div className="business-grid">{acceso.negocios.map(n=><article className="business-card" key={n.id}><PortadaLocal client={client} negocio={n}/><h3>{n.nombre}</h3><p>{n.activo?'Activo':'Inactivo'}</p><button className="button button-primary" onClick={()=>navegar(rutaNegocio(n.id,inicioNegocio(n)))}>Abrir panel de {n.nombre}</button></article>)}</div>}
               </section>
 
             </>}

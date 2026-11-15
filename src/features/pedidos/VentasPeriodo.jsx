@@ -31,7 +31,7 @@ export default function VentasPeriodo({ consultar }) {
 
   const dias = resultado?.dias ?? []
   const maximo = dias.reduce((max, dia) => Math.max(max, dia[medida]), 0)
-  return <details className="orders-advanced">
+  return <details className="orders-advanced sales-report">
     <summary>Ventas y pedidos por período</summary>
     <form className="panel orders-filters" onSubmit={buscar}>
       <label>Desde (informe)<input required type="date" value={desde} max={hasta} onChange={e => setDesde(e.target.value)} /></label>
@@ -42,7 +42,7 @@ export default function VentasPeriodo({ consultar }) {
     {error && <p role="alert">{error}</p>}
     {resultado && <section aria-labelledby={titulo}>
       <h3 id={titulo}>Del {resultado.desde} al {resultado.hasta}</h3>
-      <p><strong>{dias.reduce((n, d) => n + d.pedidos, 0)} pedidos recibidos</strong> · Ventas cobradas <strong>{pesos(dias.reduce((n, d) => n + Number(d.ventas), 0))}</strong></p>
+      <div className="report-totals"><strong>{dias.reduce((n, d) => n + d.pedidos, 0)} pedidos recibidos</strong><span>Ventas cobradas <strong>{pesos(dias.reduce((n, d) => n + Number(d.ventas), 0))}</strong></span></div>
       {dias.length === 0 ? <p>Sin pedidos en este período.</p> : <>
         <label>Gráfico por día <select value={medida} onChange={e => setMedida(e.target.value)}>
           <option value="ventas">Ventas cobradas</option><option value="pedidos">Pedidos recibidos</option>

@@ -1,0 +1,69 @@
+.access-entry .login-story {
+  position: relative; min-height: 100%; justify-content: flex-start;
+  background: linear-gradient(180deg,#1a1517a6,transparent 50%), url('../../assets/acceso-local.jpg') center/cover;
+}
+.access-entry .login-story .brand-lockup { color: white; }
+.access-entry .login-form-side { padding: clamp(1.4rem,5vw,5rem); }
+.access-entry .login-form-wrap { max-width: 30rem; margin: auto; }
+.access-entry .google-access .field-help { display: flex; align-items: center; gap: .8rem; margin-block: 1rem; }
+.access-entry .google-access .field-help::before,.access-entry .google-access .field-help::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.access-entry .login-form-wrap h1,.management-dashboard .welcome-panel h1,.merchant-heading h1 { font-family: Georgia,serif; letter-spacing: -.045em; }
+.access-entry .access-help { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 1rem; }
+.local-cover { position: relative; overflow: hidden; isolation: isolate; }
+.local-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.local-cover .shop-cover-fallback { display:none; }
+.management-dashboard .dashboard-content { max-width: 88rem; width: 100%; margin-inline: auto; }
+.management-dashboard .welcome-panel { background: var(--surface); border-color: var(--border); flex-wrap: wrap; }
+.management-dashboard .dashboard-stats { gap: 1rem; background: transparent; border: 0; }
+.management-dashboard .dashboard-stats > div { border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); padding: clamp(1rem,2vw,1.75rem); }
+.management-dashboard .business-card { padding: clamp(1rem,2vw,1.65rem); min-width: 0; }
+.management-dashboard .local-cover { height: clamp(7rem,12vw,11rem); border-radius: .75rem; }
+.management-dashboard .business-card .button { margin: .35rem .4rem 0 0; white-space: normal; }
+.management-dashboard .business-card h3 { margin-block: 1rem .4rem; }
+html[data-theme=dark] .management-dashboard .dashboard-sidebar :is(.sidebar-current,[aria-current=page]) { background:#492e39; color:#ffd5e1; }
+.merchant-overview .merchant-grid { align-items: start; }
+.merchant-overview .merchant-queue .button { margin-top: 1.3rem; }
+.merchant-sales .merchant-chart { display:grid; grid-template-columns: 1fr; gap: .65rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.merchant-sales .merchant-chart li { grid-template-columns: 4.5rem minmax(1rem,1fr) minmax(6rem,auto); align-items:center; text-align:left; font-size:.85rem; gap:.7rem; font-variant-numeric:tabular-nums; }
+.merchant-sales .merchant-chart li > span,.sales-report .sales-period-bar { height:.65rem; background:#e1eae6; border-radius:.5rem; }
+.merchant-sales .merchant-chart i,.sales-report .sales-period-bar > span { height:100%; border-radius:inherit; background:#316b58; }
+.merchant-sales .merchant-chart small { text-align:right; }
+.sales-report section > h4 { border-top:1px solid var(--border); padding-top:1.5rem; margin-top:1.75rem; font-size:1.05rem; }
+.report-totals { display:flex; flex-wrap:wrap; gap:.75rem; margin-block:1rem; }
+.report-totals > * { background:var(--surface); color:var(--text); border:1px solid var(--border); padding:.85rem 1.1rem; border-radius:.75rem; }
+.sales-report .sales-period-chart li { padding:.7rem .25rem; border-bottom:1px solid var(--border); }
+.sales-report .zone-report { border:1px solid var(--border); border-radius:.75rem; }
+.sales-report .zone-report :is(th,td) { padding:.75rem; font-variant-numeric:tabular-nums; }
+html[data-theme=dark] :is(.merchant-sales .merchant-chart li > span,.sales-report .sales-period-bar) { background:#354b43; }
+html[data-theme=dark] :is(.merchant-sales .merchant-chart i,.sales-report .sales-period-bar > span) { background:#8ecab1; }
+@media(max-width:760px) {
+ .access-entry .login-story { min-height: 6rem; padding: 1.2rem; background-position:center 52%; }
+ .management-dashboard .dashboard-stats { grid-template-columns:repeat(auto-fit,minmax(8rem,1fr)); }
+ .management-dashboard .business-grid { grid-template-columns:minmax(0,1fr); }
+ .sales-report .sales-period-chart li { grid-template-columns:minmax(0,1fr) auto; }
+ .sales-report .sales-period-bar { grid-row:2;grid-column:1/-1; }
+ .merchant-sales .merchant-chart li { grid-template-columns:3.6rem minmax(.75rem,1fr) auto; }
+}
+
+
+/* Controles de consulta y edición en la tienda y los paneles. */
+.storefront-template .habitual-panel { padding:clamp(1.1rem, 2.4vw, 2rem); margin-block:1.25rem; }
+.habitual-panel h2 { margin-top:0; }
+.cart-item fieldset { min-width:0; padding:.65rem 1rem; border:1px solid var(--border); border-radius:.7rem; margin:1rem 0; }
+.cart-item fieldset label { display:flex; align-items:center; gap:.5rem; min-height:2.5rem; }
+.cart-item fieldset legend { padding-inline:.35rem; }
+.view-switch { display:flex; flex-wrap:wrap; gap:.5rem; margin-block:0 1rem; }
+.view-switch .button { min-height:44px; }
+.view-switch button[aria-pressed=true] { background:var(--text); color:var(--surface); border-color:var(--text); }
+html[data-theme=dark] .view-switch button[aria-pressed=true] { background:#e7dfe2; color:#29252a; }
+.appearance-editor[hidden] { display:none; }
+.address-dialog { width:min(42rem,calc(100% - 2rem)); max-height:85dvh; overflow:auto; padding:clamp(1.1rem,3vw,2rem); border:1px solid var(--border); border-radius:1rem; background:var(--surface); color:var(--text); margin:auto; overscroll-behavior:contain; }
+.address-dialog::backdrop { background:rgb(12 16 19 / 65%); }
+html[data-theme=dark] .brand-symbol { color:#391322; }
+@media(max-width:640px) {
+  .business-section .order-card .order-expand { grid-column:1/-1; white-space:normal; min-height:44px; }
+  .business-section .stock-products .stock-product { display:grid; grid-template-columns:minmax(0,1fr) minmax(4rem,auto); align-items:center; gap:.6rem 1rem; padding:1rem; }
+  .stock-products .stock-product h2 { margin:0 0 .25rem; }
+  .stock-products .stock-quantity { text-align:right; font-variant-numeric:tabular-nums; }
+  .stock-products .stock-product .button { grid-column:1/-1; justify-self:start; min-height:44px; }
+}

@@ -110,6 +110,7 @@ try{
  await frame.locator('.preview-grid').waitFor()
  assert.deepEqual(await frame.locator('.preview-grid>li>strong').allTextContents(),['Pizza QA','Gaseosa QA','Nuevo QA'])
  ok(await frame.locator('.preview-list').count()===0,'previsualiza cuadrícula sin publicar')
+ await editor.getByRole('button',{name:'Editar identidad',exact:true}).click()
  await editor.route('**/rest/v1/rpc/guardar_configuracion_tienda',route=>route.abort('failed'))
  await editor.getByRole('button',{name:'Guardar borrador',exact:true}).click()
  await editor.getByRole('alert').waitFor()

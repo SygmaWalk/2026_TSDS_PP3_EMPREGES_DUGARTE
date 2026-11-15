@@ -45,6 +45,7 @@ export default function EditorApariencia({client,negocio,onVolver}){
   try{const r=await repo.publicar(registro.version);setRegistro(r);setMensaje('La identidad de tu tienda quedó publicada.')}
   catch(e){setError(e.message)}finally{trabajando.current=false;setOcupado(false)}
  }
+ // La vista previa usa el borrador y los archivos seleccionados antes de publicarlos.
  function previsualizar(){
   try{validarColores(form.color_principal,form.color_fondo);setError('');setPreview(paraPlantilla(negocio.id,form,archivos))}
   catch(e){setError(e.message)}
@@ -53,7 +54,11 @@ export default function EditorApariencia({client,negocio,onVolver}){
   <header className="app-header"><div><h1>Identidad de la tienda</h1><p>{negocio.nombre}</p></div>{negocio.activo&&<a className="button button-secondary" href={'#/tienda/'+negocio.slug} target="_blank" rel="noreferrer">Ver tienda pública ↗</a>}</header>
   {error&&<p role="alert" className="error-feedback">{error}</p>}{mensaje&&<p role="status" className="feedback">{mensaje}</p>}
   {!form?<><p>Cargando configuración…</p>{error&&<button className="button" onClick={()=>setRecarga(r=>r+1)}>Reintentar</button>}</>:<>
-   <section className="panel appearance-editor"><fieldset className="form-fields" disabled={ocupado}><legend>Identidad visual</legend>
+   <div className="view-switch" role="group" aria-label="Vista de identidad">
+    <button className="button" aria-pressed={!preview} onClick={()=>setPreview(null)}>Editar identidad</button>
+    <button className="button" disabled={ocupado} aria-pressed={Boolean(preview)} onClick={previsualizar}>Previsualizar</button>
+   </div>
+   <section hidden={Boolean(preview)} className="panel appearance-editor"><fieldset className="form-fields" disabled={ocupado}><legend>Identidad visual</legend>
     <div className="appearance-images">{[['logo_path','Logo'],['portada_path','Portada']].map(([campo,nombre])=><div className="field-group" key={campo}>
      <label htmlFor={campo}>{nombre}</label><input id={campo} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>imagen(e,campo)}/>
      <small>{archivos[campo]?.name??(form[campo]?'Imagen guardada':'Imagen predeterminada')} · JPG, PNG o WebP, hasta 5 MB.</small>
@@ -61,7 +66,7 @@ export default function EditorApariencia({client,negocio,onVolver}){
     </div>)}</div>
     <div className="appearance-colors">{[['color_principal','Color principal'],['color_fondo','Color de fondo']].map(([campo,nombre])=><div className="field-group" key={campo}><label htmlFor={campo}>{nombre}</label><div className="color-input"><input type="color" id={campo} value={form[campo]} onChange={e=>cambiar({[campo]:e.target.value})}/><span>{form[campo]}</span></div></div>)}</div>
     <p className="field-help">Usá un color principal oscuro y un fondo claro. Comprobaremos la legibilidad antes de guardar.</p>
-    <DistribucionCatalogo productos={catalogo} form={form} onCambiar={cambiar}/><div className="form-actions"><button className="button button-primary" onClick={guardar}>{ocupado?'Procesando…':'Guardar borrador'}</button><button className="button button-secondary" onClick={previsualizar}>Previsualizar</button><button className="button button-primary" disabled={sucio||!registro.version} onClick={publicar}>Publicar</button></div>
+    <DistribucionCatalogo productos={catalogo} form={form} onCambiar={cambiar}/><div className="form-actions"><button className="button button-primary" onClick={guardar}>{ocupado?'Procesando…':'Guardar borrador'}</button><button className="button button-primary" disabled={sucio||!registro.version} onClick={publicar}>Publicar</button></div>
     {sucio&&<p>Hay cambios sin guardar. Guardá el borrador antes de publicar.</p>}
     <button className="button button-secondary" onClick={()=>{if(!sucio||window.confirm('¿Descartar los cambios sin guardar y cargar el borrador vigente?'))setRecarga(r=>r+1)}}>Recargar borrador</button>
    </fieldset></section>

@@ -51,7 +51,7 @@ export default function MisTarjetones({ client }) {
     cargar()
     return () => { vigente = false }
   }, [client, abierto, intento])
-  return <section className="access-state"><h2>Mis beneficios</h2>
+  return <section className="access-state"><span className="activity-icon" aria-hidden="true">✦</span><h2>Mis beneficios</h2>
     <button className="button" aria-expanded={abierto} onClick={() => {
       setTarjetas(null); setError(false); setAbierto(!abierto)
     }}>{abierto ? 'Cerrar tarjetones' : 'Ver mis tarjetones'}</button>

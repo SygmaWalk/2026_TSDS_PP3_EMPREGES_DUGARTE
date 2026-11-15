@@ -5,6 +5,8 @@ import MapaPunto from './MapaPuntoLazy.jsx'
 import { cargarConfiguracion,guardarConfiguracion,prepararConfiguracion } from './entregasRepository.js'
 
 function Formulario({client,negocio,inicial}) {
+  // Los datos viven en el formulario para conservarlos al alternar origen y cobertura.
+  const [seccion,setSeccion]=useState('origen')
   const [modalidad,setModalidad]=useState(inicial?.modalidad??'radio')
   const [zonas,setZonas]=useState(inicial?.zonas?.map(z=>({...z,precio:String(z.tarifa_centavos/100)}))??[])
   const [direccion,setDireccion]=useState(inicial?.direccion_origen??'')
@@ -21,10 +23,14 @@ function Formulario({client,negocio,inicial}) {
   }
   return <form className="panel delivery-settings product-form" onSubmit={guardar} onChange={()=>setGuardado(false)}>
     <fieldset className="form-fields" disabled={ocupado}>
-      <h2>Origen de los envíos</h2><p>Esta dirección y el punto de origen serán visibles en la tienda. Indicá el lugar desde el que salen tus entregas.</p>
+      <div className="view-switch" role="group" aria-label="Configuración de entregas">
+        <button type="button" className="button" aria-pressed={seccion==='origen'} onClick={()=>setSeccion('origen')}>Origen</button>
+        <button type="button" className="button" aria-pressed={seccion==='cobertura'} onClick={()=>setSeccion('cobertura')}>Cobertura y tarifas</button>
+      </div>
+      {seccion==='origen'?<><h2>Origen de los envíos</h2><p>Esta dirección y el punto de origen serán visibles en la tienda. Indicá el lugar desde el que salen tus entregas.</p>
       <div className="field-group"><label htmlFor="origen-direccion">Dirección de origen</label><input id="origen-direccion" value={direccion} onChange={e=>setDireccion(e.target.value)} required minLength={5} maxLength={200}/></div>
       <MapaPunto punto={punto} onChange={p=>{setPunto(p);setGuardado(false)}} onDireccion={d=>{setDireccion(d.direccion);setPunto({latitud:d.latitud,longitud:d.longitud});setGuardado(false)}} disabled={ocupado}/>
-      <h2>Cobertura y tarifas</h2><label htmlFor="calculo-envio">Calcular envío por</label><select id="calculo-envio" value={modalidad} onChange={e=>setModalidad(e.target.value)}><option value="radio">Distancia desde el origen (radio)</option><option value="zonas">Zonas rectangulares</option></select>
+      </>:<><h2>Cobertura y tarifas</h2><label htmlFor="calculo-envio">Calcular envío por</label><select id="calculo-envio" value={modalidad} onChange={e=>setModalidad(e.target.value)}><option value="radio">Distancia desde el origen (radio)</option><option value="zonas">Zonas rectangulares</option></select>
       {modalidad==='zonas'?<EditorZonas zonas={zonas} onChange={z=>{setZonas(z);setGuardado(false)}} origen={punto} disabled={ocupado}/>:<><p>Distancia en línea recta desde el origen; no representa el recorrido por calles ni un tiempo de entrega.</p>
       {filas.map((f,i)=><div className="delivery-band" key={i}>
         <p><strong>Franja {i+1}</strong><small>{i===0?'Desde 0 km':'Más de '+(filas[i-1].km||'…')+' km'}</small></p>
@@ -34,6 +40,7 @@ function Formulario({client,negocio,inicial}) {
       </div>)}
       <button type="button" className="button button-secondary" disabled={filas.length>=20} onClick={()=>{setFilas([...filas,{km:'',precio:''}]);setGuardado(false)}}>Agregar franja</button>
       <p className="field-help">El límite superior pertenece a esa franja. La última define la cobertura máxima (hasta 100 km). Una tarifa de $0 es válida.</p></>}
+      </>}
     </fieldset>
     <p>Los cambios se aplican a nuevos pedidos. Los pedidos registrados conservan la dirección y la tarifa originales.</p>
     {error&&<p className="error-feedback" role="alert">{error}</p>}

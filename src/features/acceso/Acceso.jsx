@@ -30,19 +30,15 @@ export default function Acceso({ client, errorInicial = '', registro = false, go
     } catch { setError('No se pudo conectar. Revisá tu conexión e intentá nuevamente.') }
     finally { setOcupado(false) }
   }
-  return <main className="login-page">
+  return <main className="login-page access-entry">
     <section className="login-story" aria-label="EmpreGest">
       <Marca />
-      <div className="login-message"><span className="login-kicker">MÁS CLARIDAD PARA TU DÍA A DÍA</span><h2>Tu negocio,<br />en orden.</h2><p>Un espacio para tus productos.<br />Un acceso propio para cada persona.</p>
-        <div className="login-illustration" aria-hidden="true"><div className="illustration-shop"><span className="shop-awning" /><span className="shop-window" /><span className="shop-door" /></div><span className="illustration-label">Cada cosa en su lugar.</span><span className="illustration-seal">eg.</span></div>
-      </div>
-      <p className="login-footnote">Hecho para acompañar a los emprendimientos.</p>
     </section>
     <section className="login-form-side" aria-labelledby="login-title">
-      <div className="login-form-wrap"><a className="login-home-link" href="#/">← Volver al inicio</a><span className="eyebrow">BIENVENIDO A TU ESPACIO</span><h1 id="login-title">{registro ? 'Crear cuenta de cliente' : 'Ingresar'}</h1><p className="login-description">{registro ? 'Guardá tus datos para hacer tus próximos pedidos.' : 'Usá tu cuenta personal para continuar.'}</p>
+      <div className="login-form-wrap"><a className="login-home-link" href="#/">← Volver al inicio</a><h1 id="login-title">{registro ? 'Crear cuenta de cliente' : 'Ingresar'}</h1><p className="login-description">{registro ? 'Guardá tus datos para hacer tus próximos pedidos.' : 'Usá tu cuenta personal para continuar.'}</p>
         {error && <p role="alert" className="error-feedback">{error}</p>}
         {mensaje && <p role="status" className="feedback">{mensaje}</p>}
-        {googleDisponible&&<div className="google-access"><button className="button button-secondary login-submit" type="button" disabled={ocupado} onClick={google}>Continuar con Google</button><p className="field-help">O ingresá con tu correo y contraseña.</p></div>}
+        {googleDisponible&&<div className="google-access"><button className="button button-secondary login-submit" type="button" disabled={ocupado} onClick={google}>Continuar con Google</button><p className="field-help">o con tu correo</p></div>}
         <form className="product-form" onSubmit={enviar}>
           <fieldset disabled={ocupado} className="form-fields">
             <div className="field-group"><label htmlFor="email">Correo electrónico</label><input id="email" type="email" autoComplete="email" placeholder="nombre@correo.com" value={email} onChange={e => setEmail(e.target.value)} required /></div>
@@ -52,8 +48,6 @@ export default function Acceso({ client, errorInicial = '', registro = false, go
         </form>
         <p className="signup-switch">{registro ? '¿Ya tenés cuenta?' : '¿Es tu primera compra con cuenta?'} <a href={registro ? '#/ingresar' : '#/registro'}>{registro ? 'Ingresar' : 'Crear cuenta de cliente'}</a></p><p className="field-help">{registro ? 'Usá una contraseña de al menos 8 caracteres.' : 'La sesión se conserva en este navegador hasta que cierres sesión.'}</p>
         <div className="access-help"><span className="access-help-icon" aria-hidden="true">i</span><div><strong>¿Trabajás en un emprendimiento?</strong><p>El administrador del sistema habilita tu cuenta y te asigna los permisos que necesitás.</p></div></div>
-        <p className="login-caption">Tu acceso se adapta a tu función.</p>
-        <div className="login-roles"><span>Administrador</span><span>Emprendimiento</span><span>Cliente</span></div>
       </div>
     </section>
   </main>

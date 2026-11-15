@@ -97,6 +97,7 @@ try{
  ok(await frame.locator('.storefront-template').evaluate(e=>getComputedStyle(e).getPropertyValue('--store-accent').trim())==='#204c3b','vista previa aplica borrador')
  await page.getByRole('button',{name:'Celular',exact:true}).click()
  ok(await frame.locator('html').evaluate(e=>e.scrollWidth<=innerWidth),'vista previa celular sin desborde')
+ await page.getByRole('button',{name:'Editar identidad',exact:true}).click()
  await page.getByRole('button',{name:'Publicar',exact:true}).click()
  await page.getByText('La identidad de tu tienda quedó publicada.').waitFor()
  ok(data(await publico()).color_principal==='#204c3b','publicación desde interfaz')

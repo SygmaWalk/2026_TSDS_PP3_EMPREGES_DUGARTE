@@ -58,7 +58,7 @@ function ListaPedidos({ client }) {
 export default function MisPedidos({ client }) {
   const [abierto, setAbierto] = useState(false)
   return <section className="access-state">
-    <h2>Mis pedidos</h2>
+    <span className="activity-icon" aria-hidden="true">▤</span><h2>Mis pedidos</h2>
     <button className="button button-secondary" aria-expanded={abierto} onClick={() => setAbierto(!abierto)}>
       {abierto ? 'Ocultar historial' : 'Ver mis pedidos'}
     </button>

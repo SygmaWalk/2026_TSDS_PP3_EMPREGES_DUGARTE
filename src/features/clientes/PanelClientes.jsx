@@ -54,8 +54,11 @@ export default function PanelClientes({client,negocio,usuarioId,onVolver,reposit
   <header className="app-header"><div><h1>Clientes</h1><p>{negocio.nombre}</p></div></header>
 
   {seleccionado!==null?<Ficha key={seleccionado} id={seleccionado} repository={repository} puedeEditar={negocio.permisos.includes('clientes.editar')} puedeVerPedidos={negocio.permisos.includes('pedidos.ver')} onVolver={()=>{setSeleccionado(null);recargar()}}/>:<>
-   {negocio.permisos.includes('pedidos.ver') && <button className="button" aria-expanded={verFrecuencia} onClick={()=>setVerFrecuencia(!verFrecuencia)}>Clientes frecuentes</button>}
-   {verFrecuencia && negocio.permisos.includes('pedidos.ver') && <FrecuenciaClientes repository={repository} onFicha={setSeleccionado}/>}
+   {negocio.permisos.includes('pedidos.ver') && <div className="view-switch" role="group" aria-label="Vista de clientes">
+     <button className="button" aria-pressed={!verFrecuencia} onClick={()=>setVerFrecuencia(false)}>Directorio</button>
+     <button className="button" aria-pressed={verFrecuencia} onClick={()=>setVerFrecuencia(true)}>Clientes frecuentes</button>
+   </div>}
+   {verFrecuencia && negocio.permisos.includes('pedidos.ver') ? <FrecuenciaClientes repository={repository} onFicha={setSeleccionado}/> : <>
    <form className="customer-search" onSubmit={buscar}>
     <div className="field-group"><label htmlFor="buscar-cliente">Buscar por nombre o teléfono</label><input id="buscar-cliente" type="search" maxLength={100} value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Ej.: Ana o 11 5555-6666"/></div>
     <button className="button button-primary" type="submit">Buscar clientes</button>
@@ -68,6 +71,7 @@ export default function PanelClientes({client,negocio,usuarioId,onVolver,reposit
     <div className="section-heading"><h2>{resultado.total} {consulta ? 'clientes encontrados' : 'clientes registrados'}</h2></div>
     {!resultado.clientes.length?<div className="access-state"><h3>{consulta?'No encontramos clientes con esa búsqueda':'Todavía no hay clientes en esta página'}</h3><p>{consulta?'Probá con parte del nombre o del teléfono.':'Al confirmar un pedido, su contacto aparecerá aquí.'}</p></div>:<ul className="customers-list">{resultado.clientes.map(c=><li className="panel customer-card" key={c.id}><div><h3>{c.nombre}</h3><p>{c.telefono}</p><p>{c.direccion||'Sin dirección registrada'}</p></div><button className="button button-secondary" aria-label={'Ver ficha de '+c.nombre} onClick={()=>setSeleccionado(c.id)}>Ver ficha ↗</button></li>)}</ul>}
     <nav className="orders-pagination" aria-label="Páginas de clientes"><button className="button button-secondary" disabled={pagina===0} onClick={()=>cambiarPagina(pagina-1)}>Anterior</button><span>Página {pagina+1}</span><button className="button button-secondary" disabled={(pagina+1)*25>=resultado.total} onClick={()=>cambiarPagina(pagina+1)}>Siguiente</button></nav>
+   </>}
    </>}
   </>}
  </div></main>

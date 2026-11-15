@@ -37,6 +37,7 @@ try{
  await merchant.getByLabel('Dirección de origen',{exact:true}).fill('Origen de prueba Buenos Aires')
  await merchant.getByText('Indicar coordenadas manualmente',{exact:true}).click()
  await merchant.getByLabel('Latitud',{exact:true}).fill('-34.6037');await merchant.getByLabel('Longitud',{exact:true}).fill('-58.3816');await merchant.getByRole('button',{name:'Ubicar punto',exact:true}).click()
+ await merchant.getByRole('button',{name:'Cobertura y tarifas',exact:true}).click()
  await merchant.getByLabel('Calcular envío por',{exact:true}).selectOption('zonas')
  await merchant.getByRole('button',{name:'Dibujar zona',exact:true}).click()
  const mapa=merchant.getByLabel('Zonas de envío',{exact:true}).locator('.delivery-map')

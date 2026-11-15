@@ -27,7 +27,7 @@ export default function PedidoHabitual({ client, negocioId, onAgregar, cargarPro
     } catch (e) { if(activo.current)setError(e.message) }
     finally { enProceso.current=false;if(activo.current)setOcupado(false) }
   }
-  return <section className="panel" aria-label="Recomendación personal">
+  return <section className="panel habitual-panel" aria-label="Recomendación personal">
     <h2>¿Repetimos tus favoritos?</h2>
     <p>Podemos sugerirte productos según tus últimas compras en esta tienda.</p>
     <button className="button" disabled={ocupado} onClick={() => consultar()}>{ocupado ? 'Consultando…' : 'Ver mi pedido habitual'}</button>

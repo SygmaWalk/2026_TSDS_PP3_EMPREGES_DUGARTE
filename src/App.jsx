@@ -19,6 +19,7 @@ function AppContent({ client = supabase, publicClient = supabasePublic }) {
     const errorOAuth=errorRetornoOAuth()
     const teniaCodigo=new URLSearchParams(window.location.search).has('code')
     let vigente = true
+    // El evento de autenticación tiene prioridad sobre una respuesta tardía de getSession.
     let eventoRecibido = false
     const { data: { subscription } } = client.auth.onAuthStateChange((_evento, session) => {
       eventoRecibido = true
@@ -55,3 +56,5 @@ function AppContent({ client = supabase, publicClient = supabasePublic }) {
 }
 
 export default function App(props){return <><AppContent {...props}/><ThemeToggle/></>}
+
+import './features/acceso/gestion-visual.css'

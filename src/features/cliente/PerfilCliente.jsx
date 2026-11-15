@@ -20,8 +20,8 @@ export default function PerfilCliente({ client, usuario }) {
     } catch (fallo) { setError(fallo.message) }
     finally { setGuardando(false) }
   }
-  return <section className="profile-layout" id="mi-perfil">
-    <div className="profile-intro"><span className="profile-monogram" aria-hidden="true">{(perfil.nombre || usuario.email || 'C').slice(0, 1).toUpperCase()}</span><span className="eyebrow">TU ESPACIO PERSONAL</span><h2>Mi perfil</h2><p>Menos datos para escribir.<br />Más tiempo para elegir.</p><a className="button button-primary" href="#/emprendimientos">Explorar tiendas ↗</a><div className="profile-privacy"><strong>Tus datos, en tu cuenta</strong><p>Tu perfil no aparece en el catálogo público. Al confirmar un pedido, la tienda recibe los datos de contacto y entrega que revisaste.</p></div></div>
+  return <section className="profile-layout" id="mi-perfil" tabIndex={-1}>
+    <header className="customer-profile-heading"><h2>Mi perfil</h2><p>Administrá tus datos de contacto y entrega.</p></header>
     <div className="profile-form panel"><h3>Datos personales</h3><p>Usaremos estos datos para completar tus próximos pedidos. Podés modificarlos antes de confirmar.</p>
       <form className="product-form" onSubmit={guardar}><fieldset disabled={guardando} className="form-fields">
         <div className="field-group"><label htmlFor="perfil-nombre">Nombre y apellido</label><input id="perfil-nombre" autoComplete="name" required minLength={2} maxLength={100} value={perfil.nombre} onChange={e => { setPerfil({ ...perfil, nombre: e.target.value }); setMensaje('') }} /></div>
@@ -31,8 +31,9 @@ export default function PerfilCliente({ client, usuario }) {
         {error && <p role="alert" className="error-feedback">{error}</p>}{mensaje && <p role="status" className="feedback">{mensaje}</p>}
         <button className="button button-primary" type="submit">{guardando ? 'Guardando…' : 'Guardar perfil'}</button>
       </fieldset></form>
-      <DireccionesCliente client={client} key={usuario.id}/>
+
       <div className="session-explanation"><strong>Acerca de tu sesión</strong><p>Tu cuenta sigue abierta en este navegador aunque cierres la ventana o apagues el equipo. Usá “Cerrar sesión” cuando termines en un dispositivo compartido.</p></div>
     </div>
+    <div className="customer-address-card"><DireccionesCliente client={client} key={usuario.id}/></div>
   </section>
 }

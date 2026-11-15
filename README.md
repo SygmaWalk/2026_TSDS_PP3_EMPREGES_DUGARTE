@@ -4,7 +4,7 @@ Aplicación para emprendimientos gastronómicos: catálogo público, carrito per
 
 ## Continuar desde otra PC
 
-Requisitos: Git, Node.js 24 y Docker Desktop si se utiliza Supabase local.
+Requisitos: Git, Node.js 24.15 o posterior compatible y Docker Desktop si se utiliza Supabase local.
 
 ```sh
 git clone https://github.com/SygmaWalk/2026_TSDS_PP3_EMPREGES_DUGARTE.git
@@ -37,9 +37,9 @@ El código incluye el botón y retorno de OAuth con PKCE. `VITE_AUTH_GOOGLE_ENAB
 
 La aplicación retorna a `ORIGEN/#/ingresar`. El origen del sitio debe estar permitido en la configuración de autenticación de Supabase. La confirmación real del recorrido con Google sigue pendiente.
 
-Al 05/11/2026, Supabase en la nube tiene 23 migraciones aplicadas según la revisión de esa fecha y el proveedor Google habilitado. Para probar desde otra PC, crear `.env.cloud.local` con `VITE_SUPABASE_URL=https://htvitbptpfpackzepktu.supabase.co`, la clave publicable del proyecto en `VITE_SUPABASE_PUBLISHABLE_KEY` y `VITE_AUTH_GOOGLE_ENABLED=true`. Ejecutar `npm run dev -- --mode cloud` para usar esa configuración. El entorno local de Docker sigue disponible con `npm run dev` y `.env.local`.
+Para usar la nube desde esta PC, crear `.env.cloud.local` con la URL y clave publicable del proyecto y ejecutar `npm run dev -- --mode cloud`. El modo cloud también hereda valores de `.env.local`; verificar explícitamente las opciones de Google y Maps que se quieran usar.
 
-El proyecto Vercel se llama `2026-tsds-pp-3-empreges-dugarte`. Usar Vite, `npm run build`, salida `dist` y las tres variables públicas anteriores. Antes de dar por aceptado el acceso con Google, verificar el dominio de producción, su dirección de retorno en Supabase y el regreso a la tienda con el carrito.
+El proyecto Vercel se llama `2026-tsds-pp-3-empreges-dugarte`. Usar Vite, `npm run build`, salida `dist` y las variables públicas de Supabase. Para Maps agregar VITE_GOOGLE_MAPS_ENABLED=true, VITE_GOOGLE_MAPS_API_KEY y un VITE_GOOGLE_MAPS_MAP_ID propio. Autorizar Maps JavaScript API y Places API (New) en Google Cloud. Volver a desplegar al cambiar variables. Antes de dar por aceptado el acceso con Google, verificar el dominio de producción, su dirección de retorno en Supabase y el regreso a la tienda con el carrito.
 
 ## Comprobaciones
 
@@ -57,3 +57,12 @@ Las pruebas de frontend no sustituyen las verificaciones de permisos y persisten
 - [Cierre técnico del sprint 5](docs/pruebas/2026-10-30-cierre-tecnico-sprint-5.md)
 
 Playwright prueba los informes de EmpreGest contra Supabase local. La guía del sprint 6 incluye comandos, resultados y los recorridos manuales pendientes. El sprint actual y los criterios de aceptación se siguen en Jira; código publicado no equivale a historia aceptada.
+
+
+## Documentación vigente
+
+- [Guía del código y flujos](docs/GUIA-CODIGO.md).
+- [Demo local con cuentas, productos y fotografías](docs/pruebas/demo-local.md).
+- [Pruebas manuales y automatizadas](docs/pruebas/PRUEBAS-MANUALES.md).
+
+Los informes fechados en docs/pruebas describen la ejecución de esa fecha. Sus cuentas, identificadores y resultados pueden diferir de la instalación actual. Los documentos iniciales reemplazados pueden recuperarse desde el historial de Git.

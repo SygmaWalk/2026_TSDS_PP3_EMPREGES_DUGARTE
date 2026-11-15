@@ -60,8 +60,9 @@ export default function ResumenNegocio({ client, negocio, onAbrir }) {
           <strong>{moneda(datos.dias.reduce((n,d) => n + d.ventas, 0))}</strong>
           <p>Pedidos cobrados por fecha de creación</p>
           <ol className="merchant-chart">{datos.dias.map(d => <li key={d.dia}>
-            <small>{moneda(d.ventas)}</small><span aria-hidden="true"><i style={{height: (100*d.ventas/max)+'%'}} /></span>
-            <time dateTime={d.dia}>{d.etiqueta}</time>
+            <time dateTime={d.dia}>{d.etiqueta} {Number(d.dia.slice(-2))}</time>
+            <span aria-hidden="true"><i style={{width: (100*d.ventas/max)+'%'}} /></span>
+            <small>{moneda(d.ventas)}</small>
           </li>)}</ol>
         </section>
       </div>}

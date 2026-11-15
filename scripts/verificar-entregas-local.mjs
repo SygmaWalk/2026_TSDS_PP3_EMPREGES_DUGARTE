@@ -73,6 +73,7 @@ try{
  await page.getByText('Indicar coordenadas manualmente',{exact:true}).click()
  await page.getByLabel('Latitud',{exact:true}).fill('-34.6037');await page.getByLabel('Longitud',{exact:true}).fill('-58.3816')
  await page.getByRole('button',{name:'Ubicar punto'}).click()
+ await page.getByRole('button',{name:'Cobertura y tarifas',exact:true}).click()
  await page.getByLabel('Límite en km de franja 1').fill('2');await page.getByLabel('Tarifa de franja 1').fill('500')
  await page.getByRole('button',{name:'Agregar franja'}).click()
  await page.getByLabel('Límite en km de franja 2').fill('5');await page.getByLabel('Tarifa de franja 2').fill('900')
